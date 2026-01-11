@@ -1,0 +1,183 @@
+@using WebAppSPK.ViewModels
+@model AnalysisStepVM
+
+@{
+    ViewData["Title"] = "Analisis Lingkungan & Demografi";
+    // Tema warna Ungu/Indigo untuk nuansa Sosial & Lingkungan
+    var themeColor = "#818cf8"; 
+}
+
+<style>
+    /* Stepper UI */
+    .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; }
+    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid rgba(255,255,255,0.1); width: 100%; top: 20px; left: -50%; z-index: 2; }
+    .stepper-item:first-child::before { content: none; }
+    .step-counter { position: relative; z-index: 5; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; border: 2px solid rgba(255,255,255,0.1); color: white; font-weight: bold; margin-bottom: 10px; }
+    .stepper-item.completed .step-counter { background: @themeColor; border-color: @themeColor; color: #0f172a; }
+    .stepper-item.active .step-counter { background: #f472b6; border-color: #f472b6; box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
+    .step-name { color: rgba(255,255,255,0.5); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Matrix Loader */
+    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020617; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
+    .matrix-text { font-family: 'Courier New', monospace; color: @themeColor; font-size: 1.2rem; text-shadow: 0 0 10px @themeColor; }
+    .scan-line { width: 300px; height: 2px; background: @themeColor; box-shadow: 0 0 15px @themeColor; position: relative; overflow: hidden; margin: 20px 0; }
+    .scan-line::after { content: ""; position: absolute; width: 100%; height: 100%; background: white; left: -100%; animation: scan 1.5s infinite; }
+    @@keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+
+    .spk-card { background: rgba(30,41,59,0.5) !important; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; backdrop-filter: blur(10px); }
+    .btn-cyber-final { background: linear-gradient(135deg, @themeColor, #6366f1); border: none; border-radius: 12px; color: white; transition: all 0.3s ease; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-cyber-final:hover { transform: scale(1.02); box-shadow: 0 0 20px rgba(129, 140, 248, 0.5); color: white; }
+    
+    .stat-box { background: rgba(0,0,0,0.2); border-radius: 15px; padding: 1.5rem; border: 1px solid rgba(255,255,255,0.05); }
+</style>
+
+<div id="loader" class="loading-overlay">
+    <div class="matrix-text mb-2 text-uppercase">CALIBRATING DEMOGRAPHIC DATA...</div>
+    <div class="scan-line"></div>
+    <div class="text-white-50 small">Finalizing criteria for: @TempData["UserNama"]</div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="stepper-wrapper">
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Biodata</div></div>
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Ekonomi</div></div>
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Peluang</div></div>
+                <div class="stepper-item active"><div class="step-counter">4</div><div class="step-name">Hasil</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center mb-5">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-10 border border-white border-opacity-10 mb-3">
+            <span class="fw-bold" style="color: @themeColor">ANALISIS 04</span>
+            <span class="text-white-50">|</span>
+            <span class="text-white small">KRITERIA LINGKUNGAN</span>
+        </div>
+        <h2 class="fw-800 text-white">Profil <span style="color: @themeColor">Demografis Wilayah</span></h2>
+        <p class="text-white-50 mx-auto" style="max-width: 650px;">
+            @Model.Narration
+        </p>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="spk-card p-4 h-100 d-flex flex-column">
+                <h5 class="text-white fw-bold mb-4">Deep Insight</h5>
+                
+                <div class="stat-box mb-4">
+                    <span class="text-white-50 small d-block mb-1">Populasi Rata-rata (Dataset)</span>
+                    <h3 class="fw-800 m-0" style="color: @themeColor">
+                        @((Model.ChartValues?.Any() == true ? Model.ChartValues.Average() : 0).ToString("N0"))
+                        <span class="fs-6 fw-normal text-white-50">k</span>
+                    </h3>
+                </div>
+
+                <p class="small text-white-50 text-justify mb-4">
+                    @Model.DeepInsight
+                </p>
+
+                <div class="alert bg-opacity-10 border-0 rounded-4 p-3 mb-4" style="background: rgba(129, 140, 248, 0.1); border-left: 4px solid @themeColor !important;">
+                    <h6 class="fw-bold small mb-1" style="color: @themeColor">Why it matters?</h6>
+                    <p class="text-white-50 mb-0" style="font-size: 0.75rem;">
+                        @Model.WhyItMatters
+                    </p>
+                </div>
+
+                <div class="mt-auto">
+                    <a asp-controller="Analysis" asp-action="GenerateFinalReport" class="btn btn-cyber-final w-100 py-3 fw-bold">
+                        Lihat Rekomendasi Akhir <i class="bi bi-trophy ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="spk-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h5 class="text-white fw-bold m-0"><i class="bi bi-radar me-2" style="color: @themeColor"></i>Demographic Radar</h5>
+                        <p class="text-white-50 small mb-0">Visualisasi kepadatan penduduk antar prefektur</p>
+                    </div>
+                    <div class="text-end">
+                        <span class="d-block text-white-50 small">Processing Time</span>
+                        <span class="badge bg-white bg-opacity-10 text-white">@Model.DataProcessingTime</span>
+                    </div>
+                </div>
+                
+                <div style="height: 450px;">
+                    <canvas id="populationRadar"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
+            }, 1000);
+        });
+
+        const ctx = document.getElementById('populationRadar').getContext('2d');
+        const labels = @Html.Raw(Json.Serialize(Model.ChartLabels));
+        const dataValues = @Html.Raw(Json.Serialize(Model.ChartValues));
+
+        new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Populasi (Ribuan Jiwa)',
+                    data: dataValues,
+                    fill: true,
+                    backgroundColor: 'rgba(129, 140, 248, 0.2)',
+                    borderColor: '@themeColor',
+                    borderWidth: 3,
+                    pointBackgroundColor: '@themeColor',
+                    pointBorderColor: '#fff',
+                    pointHoverRadius: 6,
+                    tension: 0.2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: 'rgba(255,255,255,0.1)' },
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        pointLabels: {
+                            color: '#94a3b8',
+                            font: { size: 11, family: 'Inter' }
+                        },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: '@themeColor',
+                        padding: 12,
+                        cornerRadius: 10,
+                        callbacks: {
+                            label: function(context) {
+                                return ` Populasi: ${context.raw.toLocaleString()} Ribu Jiwa`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

@@ -1,0 +1,29 @@
+## User-specific files
+*.rsuser
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+## Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+[Rr]eleases/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Oo]ut/
+
+## Visual Studio 2015/2017/2019/2022 cache/options directory
+.vs/
+
+## Others
+.DS_Store
+*.swp
+*.lock
+appsettings.Development.json

@@ -1,0 +1,155 @@
+/* --- Professional Palette & Variables --- */
+:root {
+    --primary-dark: #020617;
+    --accent-pink: #FF1493;
+    --accent-pink-hover: #ff4db2;
+    --text-muted: #94a3b8;
+    --glass-bg: rgba(15, 23, 42, 0.7);
+    --glass-border: rgba(255, 255, 255, 0.08);
+    --neon-glow: 0 0 15px rgba(255, 20, 147, 0.3);
+}
+
+/* --- Base & Scrollbar --- */
+body {
+    background-color: var(--primary-dark);
+    background-image: 
+        radial-gradient(at 0% 0%, rgba(255, 20, 147, 0.08) 0px, transparent 40%),
+        radial-gradient(at 100% 100%, rgba(255, 20, 147, 0.08) 0px, transparent 40%);
+    color: #f8fafc;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow-x: hidden;
+    min-height: 100vh;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--primary-dark); }
+::-webkit-scrollbar-thumb { 
+    background: rgba(255, 20, 147, 0.2); 
+    border-radius: 10px; 
+}
+::-webkit-scrollbar-thumb:hover { background: var(--accent-pink); }
+
+/* --- Stepper Components (Main & Sub) --- */
+.stepper-wrapper {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-bottom: 3rem;
+}
+
+.stepper-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    z-index: 2;
+}
+
+.stepper-item::before {
+    content: "";
+    position: absolute;
+    top: 20px;
+    left: -50%;
+    width: 100%;
+    height: 2px;
+    background: rgba(255, 255, 255, 0.1);
+    z-index: -1;
+}
+
+.stepper-item:first-child::before { content: none; }
+
+.step-counter {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #1e293b;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    color: white;
+    font-weight: bold;
+    margin-bottom: 10px;
+    transition: all 0.4s ease;
+}
+
+.stepper-item.active .step-counter {
+    background: var(--accent-pink);
+    border-color: var(--accent-pink);
+    box-shadow: 0 0 20px rgba(255, 20, 147, 0.4);
+}
+
+.stepper-item.completed .step-counter {
+    background: #ffffff;
+    border-color: #ffffff;
+    color: var(--primary-dark);
+}
+
+.stepper-item.completed::before {
+    background: var(--accent-pink);
+}
+
+/* --- Solusi Kontras --- */
+.bg-white, .badge-interactive {
+    background-color: #ffffff !important;
+}
+
+.bg-white p, .bg-white h1, .bg-white h2, .bg-white h3, .bg-white h4, .bg-white h5, .bg-white h6, 
+.bg-white span, .bg-white div, .bg-white label,
+.badge-interactive {
+    color: #0f172a !important;
+    text-shadow: none !important;
+}
+
+/* --- Utility Classes --- */
+.glass-card {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--glass-border);
+    border-radius: 24px;
+    transition: all 0.4s ease;
+}
+
+.fw-900 { font-weight: 900; }
+.fw-800 { font-weight: 800; }
+
+.text-pink { color: var(--accent-pink) !important; }
+.bg-pink { background-color: var(--accent-pink) !important; }
+
+.shadow-pink {
+    box-shadow: 0 4px 20px rgba(255, 20, 147, 0.3);
+}
+
+/* --- Buttons --- */
+.btn-pink {
+    background: var(--accent-pink);
+    border: none;
+    color: white !important;
+    font-weight: 700;
+    border-radius: 12px;
+    padding: 12px 28px;
+    transition: all 0.3s ease;
+}
+
+.btn-pink:hover {
+    background: var(--accent-pink-hover);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 20, 147, 0.5);
+}
+
+/* --- Animations --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+    animation: fadeIn 0.6s ease forwards;
+}
+
+/* --- Chart Canvas Fix --- */
+canvas {
+    filter: drop-shadow(0 10px 15px rgba(0,0,0,0.3));
+}

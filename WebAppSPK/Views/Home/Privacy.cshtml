@@ -1,0 +1,134 @@
+﻿@{
+    ViewData["Title"] = "Kebijakan Privasi";
+}
+
+<style>
+    .privacy-header {
+        background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
+        border-bottom: 1px solid rgba(255, 20, 147, 0.2);
+        padding: 60px 0;
+        margin-bottom: 40px;
+    }
+
+    .glass-section {
+        background: rgba(255, 255, 255, 0.02);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+        border-radius: 20px;
+        padding: 40px;
+        margin-bottom: 30px;
+    }
+
+    .policy-item {
+        margin-bottom: 25px;
+    }
+
+    .policy-item h4 {
+        color: var(--accent-pink);
+        font-weight: 700;
+        margin-bottom: 15px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .policy-item p {
+        color: rgba(255, 255, 255, 0.7);
+        line-height: 1.8;
+        font-size: 0.95rem;
+    }
+
+    .toc-link {
+        color: rgba(255, 255, 255, 0.5);
+        text-decoration: none;
+        transition: all 0.3s;
+        display: block;
+        padding: 8px 0;
+        font-size: 0.9rem;
+    }
+
+    .toc-link:hover {
+        color: var(--accent-pink);
+        padding-left: 5px;
+    }
+</style>
+
+<div class="privacy-header">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h1 class="display-4 fw-800 text-white mb-3">Privacy <span class="text-pink">Policy</span></h1>
+                <p class="text-white-50 lead">Komitmen kami dalam melindungi data pribadi dan transparansi penggunaan algoritma SAW.</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                <div class="text-white-50 small">Terakhir Diperbarui:</div>
+                <div class="text-white fw-bold">10 Januari 2026</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container pb-5">
+    <div class="row">
+        <div class="col-lg-3 mb-4">
+            <div class="sticky-top" style="top: 100px;">
+                <h6 class="text-white fw-bold text-uppercase tracking-wider mb-3 small">Konten</h6>
+                <nav>
+                    <a href="#pengumpulan" class="toc-link">1. Pengumpulan Data</a>
+                    <a href="#penggunaan" class="toc-link">2. Penggunaan Data</a>
+                    <a href="#keamanan" class="toc-link">3. Keamanan Algoritma</a>
+                    <a href="#estat" class="toc-link">4. Sumber Data e-Stat</a>
+                    <a href="#kontak" class="toc-link">5. Hubungi Kami</a>
+                </nav>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="glass-section shadow-lg">
+                
+                <section id="pengumpulan" class="policy-item">
+                    <h4><i class="bi bi-collect"></i> 1. Pengumpulan Data</h4>
+                    <p>
+                        Aplikasi Career SPK mengumpulkan informasi terbatas yang Anda berikan secara sukarela, termasuk nama, preferensi lokasi, dan jawaban kuesioner mental. Kami tidak mengumpulkan data sensitif seperti nomor identitas resmi atau detail keuangan pribadi.
+                    </p>
+                </section>
+
+                <section id="penggunaan" class="policy-item">
+                    <h4><i class="bi bi-gear-wide-connected"></i> 2. Penggunaan Data</h4>
+                    <p>
+                        Data yang Anda masukkan digunakan secara eksklusif untuk menjalankan fungsi sistem pendukung keputusan (SPK). Jawaban kuesioner Anda dikonversi menjadi bobot numerik yang kemudian diproses menggunakan metode <strong>Simple Additive Weighting (SAW)</strong> untuk memberikan rekomendasi prefektur terbaik.
+                    </p>
+                </section>
+
+                <section id="keamanan" class="policy-item">
+                    <h4><i class="bi bi-shield-lock"></i> 3. Keamanan Algoritma</h4>
+                    <p>
+                        Kami memastikan bahwa proses kalkulasi dilakukan di sisi server yang aman. Hasil analisis Anda bersifat sementara selama sesi berlangsung dan tidak akan dipublikasikan atau dijual kepada pihak ketiga mana pun.
+                    </p>
+                </section>
+
+                <section id="estat" class="policy-item">
+                    <h4><i class="bi bi-database-check"></i> 4. Sumber Data e-Stat</h4>
+                    <p>
+                        Aplikasi ini menggunakan API atau dataset publik dari <strong>Portal e-Stat Japan</strong>. Kami tidak bertanggung jawab atas perubahan data mendadak dari sumber resmi pemerintah Jepang, namun kami berkomitmen untuk melakukan sinkronisasi data secara berkala guna menjaga akurasi rekomendasi.
+                    </p>
+                </section>
+
+                <section id="kontak" class="policy-item mb-0">
+                    <h4><i class="bi bi-envelope-at"></i> 5. Hubungi Kami</h4>
+                    <p>
+                        Jika Anda memiliki pertanyaan mengenai penggunaan data Anda dalam aplikasi ini, silakan hubungi tim pengembang melalui portal dukungan teknis kami.
+                    </p>
+                    <div class="mt-4 pt-4 border-top border-white border-opacity-10 text-center">
+                        <a href="mailto:support@career-spk.jp" class="btn btn-outline-pink px-4">Kirim Email Dukungan</a>
+                    </div>
+                </section>
+
+            </div>
+
+            <div class="text-center text-white-50 small italic">
+                <p>Dengan menggunakan layanan Career SPK, Anda menyetujui syarat dan ketentuan penggunaan data sebagaimana dijelaskan di atas.</p>
+            </div>
+        </div>
+    </div>
+</div>

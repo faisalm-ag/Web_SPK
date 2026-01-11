@@ -1,0 +1,196 @@
+﻿@{
+    ViewData["Title"] = "Dashboard SPK - Magang Jepang";
+}
+
+<style>
+    /* Hero Title - Modern Cyberpunk Gradient */
+    .hero-title {
+        font-size: clamp(2.5rem, 5vw, 4.5rem);
+        line-height: 1.1;
+        background: linear-gradient(135deg, #fff 40%, var(--accent-pink) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-weight: 800;
+        letter-spacing: -2px;
+    }
+
+    /* Glassmorphism Card Effect */
+    .glass-card {
+        background: rgba(255, 255, 255, 0.03);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 28px;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        height: 100%;
+    }
+
+    .glass-card:hover {
+        border-color: var(--accent-pink);
+        transform: translateY(-8px);
+        background: rgba(255, 255, 255, 0.05);
+        box-shadow: 0 15px 35px rgba(255, 20, 147, 0.2);
+    }
+
+    /* Badge Styles */
+    .badge-interactive {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        font-weight: 700;
+        padding: 8px 16px;
+        border-radius: 8px;
+        text-transform: uppercase;
+        font-size: 0.7rem;
+        transition: 0.3s;
+    }
+
+    .workflow-num {
+        font-size: 0.75rem;
+        background: rgba(255, 20, 147, 0.15);
+        color: var(--accent-pink);
+        padding: 4px 12px;
+        border-radius: 10px;
+        width: fit-content;
+        font-weight: 800;
+    }
+
+    .methodology-box {
+        background: linear-gradient(180deg, rgba(255,20,147,0.08) 0%, rgba(0,0,0,0) 100%);
+        border-left: 4px solid var(--accent-pink);
+    }
+
+    /* Link e-Stat Style */
+    .estat-link {
+        color: #22d3ee;
+        text-decoration: none;
+        font-weight: 600;
+        transition: 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .estat-link:hover {
+        color: #fff;
+        text-shadow: 0 0 10px rgba(34, 211, 238, 0.6);
+    }
+
+    /* Animation pulse untuk dot */
+    .dot-pulse {
+        width: 10px;
+        height: 10px;
+        background-color: var(--accent-pink);
+        border-radius: 50%;
+        display: inline-block;
+        animation: pulse-pink 2s infinite;
+    }
+
+    @@keyframes pulse-pink {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 20, 147, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(255, 20, 147, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(255, 20, 147, 0); }
+    }
+</style>
+
+<div class="container py-5">
+    <div class="text-center mb-5 mt-4">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill bg-white mb-4 shadow-sm">
+            <span class="dot-pulse"></span>
+            <span class="text-dark small fw-800 text-uppercase tracking-wider">E-STAT Japan Decision Engine</span>
+        </div>
+        
+        <h1 class="hero-title mb-4">
+            Cerdas Memilih Karir <br>
+            <span class="text-pink">Magang di Jepang</span>
+        </h1>
+        
+        <p class="lead text-white-50 mx-auto fs-5 mb-4" style="max-width: 800px;">
+            Sistem Pendukung Keputusan yang mengombinasikan <strong>Machine Learning</strong> untuk analisis kesiapan personal dan <strong>Metode SAW</strong> untuk pengolahan Big Data Pemerintah Jepang.
+        </p>
+
+        <div class="mb-2">
+            <a href="https://www.e-stat.go.jp/en" target="_blank" class="estat-link small">
+                <i class="bi bi-box-arrow-up-right"></i> Sumber Data: Official Statistics of Japan (e-Stat)
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5 pt-4">
+        <div class="col-12 d-flex align-items-center mb-3">
+            <h5 class="text-white fw-bold m-0 text-uppercase tracking-widest small">
+                <i class="bi bi-cpu me-2 text-pink"></i> Architecture Workflow
+            </h5>
+            <div class="flex-grow-1 ms-3 border-top border-white border-opacity-10"></div>
+        </div>
+
+        @{
+            var steps = new[] {
+                new { Icon = "shield-lock", Title = "Mental Check", Desc = "ML memprediksi kesiapan adaptasi budaya Anda." },
+                new { Icon = "database-fill-down", Title = "Macro Data", Desc = "Penarikan data gaji & CPI dari 47 prefektur." },
+                new { Icon = "sliders2-vertical", Title = "Preference", Desc = "Penentuan bobot kriteria berdasarkan ambisi Anda." },
+                new { Icon = "trophy", Title = "Ranking", Desc = "SAW menghasilkan rekomendasi lokasi terbaik." }
+            };
+        }
+
+        @for (int i = 0; i < steps.Length; i++)
+        {
+            <div class="col-md-3">
+                <div class="glass-card p-4">
+                    <div class="workflow-num mb-3">PHASE 0@(i+1)</div>
+                    <i class="bi bi-@steps[i].Icon text-white fs-2 mb-3 d-block"></i>
+                    <h6 class="text-white fw-bold mb-2">@steps[i].Title</h6>
+                    <p class="small text-white-50 mb-0" style="line-height: 1.6;">@steps[i].Desc</p>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row align-items-stretch g-4 mb-5">
+        <div class="col-lg-7">
+            <div class="glass-card p-4 p-md-5 methodology-box">
+                <h3 class="text-white fw-bold mb-4">Metodologi SAW Transparan</h3>
+                <p class="text-white-50 mb-4" style="text-align: justify; line-height: 1.8;">
+                    Berbeda dengan rekomendasi biasa, sistem kami bekerja dengan menghitung <strong>Matriks Normalisasi</strong>. Setiap prefektur dievaluasi berdasarkan kriteria <em>Benefit</em> (Gaji, Peluang Kerja) dan kriteria <em>Cost</em> (Biaya Hidup). Hasil akhirnya adalah skor objektif dari 0 hingga 1.0 yang mencerminkan kecocokan ideal bagi Anda.
+                </p>
+                
+                <div class="d-flex flex-wrap gap-2 mt-4">
+                    <span class="badge-interactive">Benefit-Cost Analysis</span>
+                    <span class="badge-interactive">ML Sentiment Analysis</span>
+                    <span class="badge-interactive">Real-time Ranking</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="glass-card p-4 p-md-5">
+                <h4 class="text-white fw-bold mb-4">Mengapa SPK Ini?</h4>
+                <div class="d-flex mb-4">
+                    <i class="bi bi-check2-circle text-pink fs-4 me-3"></i>
+                    <div>
+                        <h6 class="text-white mb-1">Objektivitas Data</h6>
+                        <p class="small text-white-50">Menghindari bias pemilihan hanya berdasarkan popularitas Tokyo/Osaka.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-4">
+                    <i class="bi bi-lightning-charge text-pink fs-4 me-3"></i>
+                    <div>
+                        <h6 class="text-white mb-1">Proses Cepat</h6>
+                        <p class="small text-white-50">Mengolah ribuan baris data statistik dalam hitungan detik.</p>
+                    </div>
+                </div>
+                <div class="d-flex mb-4">
+                    <i class="bi bi-eye text-pink fs-4 me-3"></i>
+                    <div>
+                        <h6 class="text-white mb-1">Visualisasi Interaktif</h6>
+                        <p class="small text-white-50">Menyajikan data dalam grafik yang mudah dipahami mahasiswa.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center py-5">
+        <a asp-controller="Assessment" asp-action="Biodata" class="btn-spk btn-lg px-5 py-3 shadow-lg">
+            Mulai Analisis Sekarang <i class="bi bi-rocket-takeoff ms-2"></i>
+        </a>
+        <p class="text-white-50 small mt-3">Estimasi waktu pengerjaan: 3-5 menit</p>
+    </div>
+</div>

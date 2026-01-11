@@ -1,0 +1,260 @@
+@using WebAppSPK.ViewModels
+@model AnalysisStepVM
+
+@{
+    ViewData["Title"] = "Analisis Biaya - " + Model.Title;
+    // Menggunakan ThemeColor dari ViewModel (Otomatis Amber karena C2 adalah Cost)
+    var themeColor = Model.ThemeColor; 
+    var accentColor = themeColor; // Menyamakan accent dengan theme agar konsisten
+}
+
+<style>
+    /* Stepper UI - Mentor Style */
+    .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; }
+    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid rgba(255,255,255,0.1); width: 100%; top: 20px; left: -50%; z-index: 2; }
+    .stepper-item:first-child::before { content: none; }
+    .step-counter { position: relative; z-index: 5; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; border: 2px solid rgba(255,255,255,0.1); color: white; font-weight: bold; margin-bottom: 10px; }
+    
+    /* Warna Step Selesai (Cyan dari Gaji) */
+    .stepper-item.completed .step-counter { background: #22d3ee; border-color: #22d3ee; color: #0f172a; }
+    /* Warna Step Aktif (Pink/Magenta) */
+    .stepper-item.active .step-counter { background: #f472b6; border-color: #f472b6; box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
+    .step-name { color: rgba(255,255,255,0.5); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
+
+    /* Consultation Card */
+    .consultation-card {
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8));
+        border: 1px solid rgba(245, 158, 11, 0.2); /* Mengikuti Amber */
+        border-radius: 24px;
+        backdrop-filter: blur(10px);
+    }
+
+    .insight-badge {
+        background: rgba(245, 158, 11, 0.1);
+        color: @accentColor;
+        padding: 6px 16px;
+        border-radius: 100px;
+        font-size: 0.75rem;
+        font-weight: bold;
+        border: 1px solid rgba(245, 158, 11, 0.3);
+    }
+
+    .value-display {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: white;
+        text-shadow: 0 0 20px rgba(245, 158, 11, 0.5);
+    }
+
+    /* Loading Overlay */
+    .loading-overlay {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: #020617; z-index: 9999; display: flex;
+        flex-direction: column; justify-content: center; align-items: center;
+    }
+    .scan-line {
+        width: 300px; height: 2px; background: @accentColor;
+        box-shadow: 0 0 15px @accentColor; position: relative; overflow: hidden; margin: 20px 0;
+    }
+    .scan-line::after {
+        content: ""; position: absolute; width: 100%; height: 100%;
+        background: white; left: -100%; animation: scan 1.5s infinite;
+    }
+    @@keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
+
+    .btn-next-step {
+        background: @accentColor;
+        color: #0f172a;
+        border: none;
+        padding: 1rem 2rem;
+        border-radius: 12px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+    .btn-next-step:hover {
+        background: white;
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(245, 158, 11, 0.3);
+    }
+
+    .sync-box {
+        background: rgba(15, 23, 42, 0.5);
+        border-left: 4px solid #22d3ee; /* Warna Cyan untuk menandakan koneksi ke data Gaji */
+        padding: 1rem;
+        border-radius: 0 12px 12px 0;
+    }
+</style>
+
+<div id="loader" class="loading-overlay">
+    <div class="mb-2 tracking-widest fw-bold" style="color:@accentColor">CALCULATING LIVING COSTS...</div>
+    <div class="scan-line"></div>
+    <div class="text-white-50 small">Synchronizing with Gaji Data for @TempData["UserNama"]</div>
+</div>
+
+<div class="container py-5">
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8 col-lg-6">
+            <div class="stepper-wrapper">
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Profil</div></div>
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Gaji</div></div>
+                <div class="stepper-item active"><div class="step-counter">3</div><div class="step-name">Biaya</div></div>
+                <div class="stepper-item"><div class="step-counter">4</div><div class="step-name">Peluang</div></div>
+                <div class="stepper-item"><div class="step-counter">5</div><div class="step-name">Hasil</div></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-5">
+        <div class="col-lg-8">
+            <span class="insight-badge mb-3 d-inline-block text-uppercase">Tahap 2: Analisis Pengeluaran & Inflasi</span>
+            <h1 class="display-4 fw-bold text-white">Indeks Biaya Hidup di <span style="color:@accentColor">Jepang</span></h1>
+            <p class="text-white-50 fs-5">Memastikan gaji Anda cukup untuk gaya hidup di <strong>@Model.UserLocationChoice</strong>.</p>
+        </div>
+    </div>
+
+    <div class="row g-4 mb-5">
+        <div class="col-lg-8">
+            <div class="consultation-card p-4 h-100">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h5 class="text-white m-0"><i class="bi bi-bar-chart-fill me-2" style="color:@accentColor"></i>Perbandingan Biaya Antar Wilayah</h5>
+                    <span class="text-white-50 small">Sumber: e-Stat (Consumer Price Index)</span>
+                </div>
+                
+                <div style="height: 380px;">
+                    <canvas id="cpiChart"></canvas>
+                </div>
+
+                <div class="mt-4 p-4 rounded-4" style="background: rgba(15, 23, 42, 0.5); border-left: 4px solid @accentColor;">
+                    <h6 style="color:@accentColor"><i class="bi bi-robot me-2"></i>Analisis Mentor Digital:</h6>
+                    <p class="text-white-50 m-0 lh-lg">@Model.DeepInsight</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="consultation-card p-4 h-100 d-flex flex-column">
+                <div class="mb-4">
+                    <h6 class="text-white-50 small text-uppercase mb-3">Rata-rata Indeks CPI</h6>
+                    <div class="value-display">
+                        @(Model.ChartValues.Any() ? Model.ChartValues.Max().ToString("F1") : "100.0")
+                    </div>
+                    <p class="small mt-1" style="color:@accentColor">Nasional Basis: 100.0</p>
+                </div>
+
+                @if (Model.IsStepComparisonAvailable)
+                {
+                    <div class="sync-box mb-4">
+                        <div class="d-flex align-items-center gap-2 mb-2" style="color:#22d3ee">
+                            <i class="bi bi-link-45deg"></i>
+                            <span class="small fw-bold text-uppercase">Data Gaji Terhubung</span>
+                        </div>
+                        <p class="text-white small mb-1">@Model.PreviousStepSummary</p>
+                        <p class="text-info x-small mb-0" style="font-size: 0.75rem;">@Model.ComparisonAnalysis</p>
+                    </div>
+                }
+
+                <div class="my-4">
+                    <h6 class="text-white-50 small text-uppercase mb-3">Mengapa Ini Penting?</h6>
+                    <p class="text-white small" style="line-height: 1.6;">@Model.WhyItMatters</p>
+                </div>
+
+                <div class="mt-auto">
+                    <div class="p-3 rounded-3 mb-4" style="background: rgba(245, 158, 11, 0.05); border: 1px dashed rgba(245, 158, 11, 0.3);">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="text-white-50">Wilayah Diproses:</span>
+                            <span class="text-white fw-bold">@Model.TotalDataProcessed Prefektur</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-white-50">Compute Speed:</span>
+                            <span class="fw-bold" style="color:@accentColor">@Model.DataProcessingTime</span>
+                        </div>
+                    </div>
+
+                    <a asp-controller="Analysis" asp-action="Peluang" class="btn btn-next-step w-100 py-3">
+                        Lanjut ke Analisis Peluang <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                const loader = document.getElementById('loader');
+                if(loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => loader.style.display = 'none', 500);
+                }
+            }, 800);
+        });
+
+        const rawLabels = @Html.Raw(Json.Serialize(Model.TranslatedLabels.Any() ? Model.TranslatedLabels : Model.ChartLabels));
+        const rawValues = @Html.Raw(Json.Serialize(Model.ChartValues));
+        const userLoc = "@Model.UserLocationChoice".toLowerCase();
+        
+        const primaryColor = "@themeColor"; // Amber (#f59e0b)
+        const baseBgColor = "rgba(245, 158, 11, 0.2)";
+
+        const ctx = document.getElementById('cpiChart').getContext('2d');
+
+        // Create Gradient for the bars
+        const gradient = ctx.createLinearGradient(0, 0, 400, 0);
+        gradient.addColorStop(0, 'rgba(245, 158, 11, 0.8)');
+        gradient.addColorStop(1, 'rgba(245, 158, 11, 0.1)');
+        
+        new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: rawLabels,
+                datasets: [{
+                    data: rawValues,
+                    backgroundColor: rawLabels.map(label => 
+                        label.toLowerCase().includes(userLoc) ? '#ffffff' : gradient
+                    ),
+                    borderColor: rawLabels.map(label => 
+                        label.toLowerCase().includes(userLoc) ? "#ffffff" : primaryColor
+                    ),
+                    borderWidth: 1,
+                    borderRadius: 5,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: '#0f172a',
+                        titleColor: primaryColor,
+                        bodyColor: '#fff',
+                        padding: 12,
+                        callbacks: {
+                            label: (context) => ` Indeks: ${context.raw} (Nasional=100)`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
+                        ticks: { color: '#64748b' },
+                        min: Math.min(...rawValues) - 1 
+                    },
+                    y: {
+                        grid: { display: false },
+                        ticks: { 
+                            color: '#94a3b8',
+                            font: { size: 11 }
+                        }
+                    }
+                }
+            }
+        });
+    </script>
+}

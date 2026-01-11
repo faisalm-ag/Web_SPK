@@ -1,0 +1,299 @@
+@using WebAppSPK.ViewModels
+@model FinalResultVM
+
+@{
+    ViewData["Title"] = "Laporan Strategis Magang Jepang";
+    var primaryColor = "#0ea5e9"; 
+    var accentColor = "#f472b6";  
+
+    // Logika penentuan warna badge status berdasarkan skor
+    var statusBootstrapClass = Model.EligibilityScore >= 80 ? "success" : 
+                              Model.EligibilityScore >= 65 ? "warning" : "danger";
+}
+
+<style>
+    :root {
+        --glass-bg: rgba(15, 23, 42, 0.7);
+        --glass-border: rgba(255, 255, 255, 0.1);
+        --dark-card: #1e293b; 
+    }
+
+    body {
+        background: radial-gradient(circle at top right, #1e293b, #0f172a);
+        color: #f8fafc;
+        font-family: 'Inter', sans-serif;
+    }
+
+    .report-card {
+        background: var(--dark-card);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 24px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3);
+    }
+
+    .score-badge {
+        font-size: 3.5rem;
+        font-weight: 800;
+        background: linear-gradient(to bottom right, #fff, #94a3b8);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        line-height: 1;
+    }
+
+    .rank-item {
+        background: rgba(255,255,255,0.03);
+        border-radius: 15px;
+        padding: 1rem;
+        margin-bottom: 0.75rem;
+        border-left: 4px solid transparent;
+        transition: all 0.3s ease;
+    }
+
+    .rank-item.top-rank {
+        background: rgba(14, 165, 233, 0.1);
+        border-left-color: #0ea5e9;
+    }
+
+    /* SWOT Card Styling */
+    .swot-card {
+        padding: 1.5rem;
+        border-radius: 20px;
+        height: 100%;
+        position: relative;
+        overflow: hidden;
+        border: none;
+    }
+
+    .bg-strength { background-color: #dcfce7; color: #064e3b !important; } 
+    .bg-weakness { background-color: #fee2e2; color: #7f1d1d !important; } 
+    .bg-opportunity { background-color: #e0f2fe; color: #0c4a6e !important; } 
+    .bg-threat { background-color: #fef3c7; color: #78350f !important; } 
+
+    .swot-title {
+        font-size: 0.85rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1.5px;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: inherit;
+    }
+
+    .swot-list {
+        padding-left: 0;
+        list-style: none;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: inherit;
+    }
+
+    .swot-list li {
+        margin-bottom: 8px;
+        display: flex;
+        align-items: flex-start;
+        gap: 10px;
+        line-height: 1.4;
+    }
+
+    .prediction-box {
+        background: linear-gradient(135deg, rgba(244, 114, 182, 0.15), rgba(129, 140, 248, 0.15));
+        border: 1px solid rgba(244, 114, 182, 0.3);
+        border-radius: 20px;
+    }
+
+    .dark-inner-card {
+        background: rgba(15, 23, 42, 0.5);
+        border: 1px solid rgba(255,255,255,0.1);
+        padding: 1rem;
+        border-radius: 15px;
+    }
+
+    @@media print {
+        .no-print { display: none; }
+        .report-card { border: 1px solid #ddd; background: #fff !important; color: #000 !important; }
+        body { background: white !important; color: black !important; }
+        .score-badge { -webkit-text-fill-color: #000; background: none; color: #000; }
+        .dark-inner-card { background: #f8f9fa !important; border: 1px solid #ccc !important; color: #000 !important; }
+        .text-white-50, .text-info { color: #555 !important; }
+    }
+</style>
+
+
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-end mb-5">
+        <div>
+            <h6 class="text-uppercase fw-bold text-info mb-1" style="letter-spacing: 2px;">Decision Support System Output</h6>
+            <h1 class="fw-800 m-0">Strategic <span style="color: @primaryColor">Report</span></h1>
+        </div>
+        <div class="text-end no-print">
+            <button onclick="window.print()" class="btn btn-outline-light rounded-pill px-4">
+                <i class="bi bi-printer me-2"></i> Print Report
+            </button>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="report-card text-center">
+                <div class="mb-4">
+                    <img src="https://ui-avatars.com/api/?name=@Model.Nama&background=0ea5e9&color=fff&size=128" 
+                         class="rounded-circle shadow-lg border border-4 border-white border-opacity-10 mb-3" alt="User">
+                    <h4 class="fw-bold m-0">@Model.Nama</h4>
+                    <span class="text-white-50 small">Bidang: @Model.BidangPekerjaan</span>
+                </div>
+
+                <div class="py-4 my-4 border-top border-bottom border-white border-opacity-10">
+                    <span class="text-white-50 small text-uppercase" style="letter-spacing: 1px;">Eligibility Score</span>
+                    <div class="score-badge">@Model.EligibilityScore%</div>
+                    <div class="badge rounded-pill bg-@statusBootstrapClass text-dark px-3 py-2 mt-2">@Model.RecommendationCategory</div>
+                </div>
+
+                <div class="prediction-box p-4 text-start">
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <div class="p-2 rounded-circle" style="background: @accentColor">
+                            <i class="bi bi-geo-alt-fill text-white"></i>
+                        </div>
+                        <h6 class="fw-bold m-0 text-white">Wilayah Yang Dipilih</h6>
+                    </div>
+                    <p class="small text-white-50 mb-0">
+                        Probabilitas kesiapan Anda di wilayah <strong>@Model.LokasiPilihan</strong>:
+                        <strong class="text-white d-block mt-2 h5">@Model.Prediction.ReadinessPercentage% — @Model.Prediction.AnalysisSummary</strong>
+                    </p>
+                </div>
+            </div>
+
+            <div class="report-card">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h6 class="fw-bold m-0"><i class="bi bi-list-ol me-2 text-info"></i>Hasil Analisis Rekomendasi</h6>
+                </div>
+                
+                @for (int i = 0; i < Model.Rankings.Count; i++)
+                {
+                    var rank = Model.Rankings[i];
+                    <div class="rank-item @(i == 0 ? "top-rank" : "")">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold text-white">#@(i + 1) @rank.AreaName</span>
+                                <div class="progress mt-1" style="height: 4px; width: 100px; background: rgba(255,255,255,0.1)">
+                                    <div class="progress-bar bg-info" style="width: @(rank.TotalScore * 100)%"></div>
+                                </div>
+                            </div>
+                            <span class="badge bg-dark border border-white border-opacity-10">Score: @rank.TotalScore.ToString("F4")</span>
+                        </div>
+                    </div>
+                }
+                <div class="mt-3 p-3 rounded-3 bg-info bg-opacity-10 border border-info border-opacity-20">
+                    <p class="small text-info mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        Algoritma Simple Additive Weighting (SAW) menentukan peringkat berdasarkan normalisasi kriteria Big Data e-Stat.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="report-card">
+                <h6 class="fw-bold mb-4 text-uppercase" style="letter-spacing: 2px; color: @primaryColor">Kesimpulan Strategis</h6>
+                <p class="text-white-50 mb-4" style="line-height: 1.7; font-size: 1rem;">@Model.SummaryMessage</p>
+                
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
+                        <div class="dark-inner-card text-center">
+                            <span class="d-block small text-white-50">Bobot Gaji</span>
+                            <span class="fw-bold text-success">@((Model.WeightSalary * 100).ToString("F0"))%</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dark-inner-card text-center">
+                            <span class="d-block small text-white-50">Bobot CPI</span>
+                            <span class="fw-bold text-danger">@((Model.WeightCPI * 100).ToString("F0"))%</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dark-inner-card text-center">
+                            <span class="d-block small text-white-50">Peluang</span>
+                            <span class="fw-bold text-info">@((Model.WeightCompany * 100).ToString("F0"))%</span>
+                        </div>
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <div class="dark-inner-card text-center">
+                            <span class="d-block small text-white-50">Sosial</span>
+                            <span class="fw-bold text-warning">@((Model.WeightPopulation * 100).ToString("F0"))%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="report-card">
+                <h6 class="fw-bold mb-4"><i class="bi bi-shield-check me-2 text-info"></i>Personalized SWOT Analysis</h6>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="swot-card bg-strength">
+                            <div class="swot-title"><i class="bi bi-plus-circle-fill"></i> Strengths</div>
+                            <ul class="swot-list">
+                                @foreach(var s in Model.Strengths){ <li><i class="bi bi-check2"></i> @s</li> }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="swot-card bg-weakness">
+                            <div class="swot-title"><i class="bi bi-dash-circle-fill"></i> Weaknesses</div>
+                            <ul class="swot-list">
+                                @foreach(var w in Model.Weaknesses){ <li><i class="bi bi-dot"></i> @w</li> }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="swot-card bg-opportunity">
+                            <div class="swot-title"><i class="bi bi-lightbulb-fill"></i> Opportunities</div>
+                            <ul class="swot-list">
+                                @foreach(var o in Model.Opportunities){ <li><i class="bi bi-arrow-up-right-short"></i> @o</li> }
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="swot-card bg-threat">
+                            <div class="swot-title"><i class="bi bi-exclamation-triangle-fill"></i> Threats</div>
+                            <ul class="swot-list">
+                                @foreach(var t in Model.Threats){ <li><i class="bi bi-shield-exclamation"></i> @t</li> }
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="report-card h-100 mb-0" style="border-left: 4px solid #22c55e;">
+                        <h6 class="fw-bold mb-3 text-success"><i class="bi bi-piggy-bank me-2"></i>Financial Advice</h6>
+                        <p class="small text-white-50 m-0">@Model.FinancialAdvice</p>
+                        <div class="mt-3 dark-inner-card">
+                            <span class="d-block text-white-50" style="font-size: 0.75rem;">Est. Potensi Tabungan/Bulan:</span>
+                            <span class="fw-bold text-white h5">¥ @Model.EstimatedMonthlySaving.ToString("N0")</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="report-card h-100 mb-0" style="border-left: 4px solid #f43f5e;">
+                        <h6 class="fw-bold mb-3 text-danger"><i class="bi bi-chat-heart me-2"></i>Family & Career Advice</h6>
+                        <p class="small text-white-50 m-0">@Model.FamilyPermissionAdvice</p>
+                        <hr class="border-white border-opacity-10">
+                        <p class="small text-white-50 m-0"><strong>Karir Masa Depan:</strong> @Model.CareerInsight</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center mt-5 no-print">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-info rounded-pill px-5">
+            <i class="bi bi-check-circle me-2"></i> Selesai & Kembali ke Beranda
+        </a>
+    </div>
+</div>
