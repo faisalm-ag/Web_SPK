@@ -7,10 +7,13 @@ namespace SPKDomain.Models
         public string PredictedLabel { get; set; } = string.Empty;
         public float ConfidenceScore { get; set; }
 
-        // --- ALIAS UNTUK VIEWMODEL & SINKRONISASI ---
-        public double Probability => (double)ConfidenceScore;
+        // PERBAIKAN: Diubah dari '=>' menjadi '{ get; set; }' agar bisa diisi nilainya
+        public double Probability { get; set; } 
         
-        // Menambah alias agar sinkron dengan FinalReport.cshtml
+        // PERBAIKAN: Menambahkan SatisfactionLevel yang dicari oleh Service
+        public string SatisfactionLevel { get; set; } = string.Empty;
+
+        // Alias untuk sinkronisasi tampilan
         public double SatisfactionPercentage => ReadinessPercentage;
         public string PredictionMessage => AnalysisSummary;
 

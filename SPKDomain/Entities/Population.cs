@@ -4,41 +4,48 @@ namespace SPKDomain.Entities
 {
     /// <summary>
     /// Entitas yang merepresentasikan data dari FINAL_Populasi.csv.
-    /// Digunakan untuk analisis lingkungan dan gaya hidup (Dataset 4).
-    /// Kriteria ini membantu memprediksi kepuasan berdasarkan preferensi keramaian wilayah.
+    /// Digunakan untuk analisis lingkungan dan sosial (Dataset 4).
+    /// Dalam SPK, kriteria ini biasanya bersifat "Benefit" karena wilayah ramai 
+    /// cenderung memiliki fasilitas umum dan komunitas yang lebih lengkap.
     /// </summary>
     public class Population
     {
-        // Kode Wilayah (Contoh: 1000 untuk Hokkaido, 2000 untuk Aomori)
+        // area_code (Contoh: 1000, 2000)
         public required string AreaCode { get; set; }
 
-        // Nama Wilayah Kanji/Asli (Contoh: 北海道)
-        public required string AreaName { get; set; }
+        // 全国・都道府県 (Nama asli Jepang: 北海道, 青森県)
+        public required string AreaNameRaw { get; set; }
 
-        // Nama Wilayah Romaji (Contoh: Hokkaido) - Untuk tampilan UI
-        public string? AreaNameDisplay { get; set; }
+        // standardized_area_en (Contoh: Hokkaido, Aomori)
+        // Kunci utama untuk sinkronisasi dengan dataset lainnya
+        public required string StandardizedAreaEn { get; set; }
 
-        // Tahun pendataan (Contoh: 1301, 1701 - format spesifik e-Stat)
+        // year (Angka tahun murni hasil ekstraksi: 2021, 2022, 2023, 2024)
         public int Year { get; set; }
 
-        // Jumlah Penduduk dalam ribuan (C4: Population in K)
+        // is_total_pop (1 jika Total Populasi 男女計 & 総人口, 0 jika detail gender)
+        public int IsTotalPop { get; set; }
+
+        // clean_value (Jumlah Penduduk dalam satuan ribuan / Thousand Persons)
         public double PopulationK { get; set; }
 
         /// <summary>
         /// Mengklasifikasikan tipe wilayah berdasarkan jumlah penduduk.
-        /// Membantu memberikan saran pada Laporan Akhir.
+        /// Digunakan untuk narasi otomatis pada Final Report.
         /// </summary>
         public string AreaType => PopulationK > 5000 ? "Metropolitan/Ramai" : 
-                                  PopulationK > 1000 ? "Urban/Sedang" : "Rural/Tenang";
+                                  PopulationK > 1500 ? "Urban/Sedang" : "Rural/Tenang";
 
         public Population() { }
 
         [SetsRequiredMembers]
-        public Population(string areaCode, string areaName, int year, double populationK)
+        public Population(string areaCode, string areaNameRaw, string standardizedAreaEn, int year, int isTotalPop, double populationK)
         {
             AreaCode = areaCode;
-            AreaName = areaName;
+            AreaNameRaw = areaNameRaw;
+            StandardizedAreaEn = standardizedAreaEn;
             Year = year;
+            IsTotalPop = isTotalPop;
             PopulationK = populationK;
         }
     }

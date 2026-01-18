@@ -2,20 +2,27 @@
 @model AnalysisStepVM
 
 @{
-    ViewData["Title"] = "Analisis Kesejahteraan - " + Model.Title;
-    // Warna tema khusus untuk Gaji (Benefit) - Cyan/Teal
-    var accentColor = "#22d3ee"; 
+    ViewData["Title"] = "Analisis Gaji - " + Model.Title;
+    // Mengambil nilai terbaru dan dikalikan 1000 jika data asli berupa satuan ribu
+    // Jika data Anda sudah dalam Yen satuan (misal 241000), hapus "* 1000"
+    var latestSalary = Model.HistoryValues.Any() ? Model.HistoryValues.Last() * 1000 : 0;
 }
 
 <style>
-    /* Stepper UI - Mentor Style */
+    :root {
+        --accent-cyan: #22d3ee;
+        --accent-pink: #f472b6;
+        --bg-dark: #020617;
+    }
+
+    /* Stepper UI */
     .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; }
     .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
     .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid rgba(255,255,255,0.1); width: 100%; top: 20px; left: -50%; z-index: 2; }
     .stepper-item:first-child::before { content: none; }
     .step-counter { position: relative; z-index: 5; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; border: 2px solid rgba(255,255,255,0.1); color: white; font-weight: bold; margin-bottom: 10px; }
-    .stepper-item.completed .step-counter { background: @accentColor; border-color: @accentColor; color: #0f172a; }
-    .stepper-item.active .step-counter { background: #f472b6; border-color: #f472b6; box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
+    .stepper-item.completed .step-counter { background: var(--accent-cyan); border-color: var(--accent-cyan); color: #0f172a; }
+    .stepper-item.active .step-counter { background: var(--accent-pink); border-color: var(--accent-pink); box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
     .step-name { color: rgba(255,255,255,0.5); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
 
     /* Consultation Card */
@@ -28,7 +35,7 @@
 
     .insight-badge {
         background: rgba(34, 211, 238, 0.1);
-        color: @accentColor;
+        color: var(--accent-cyan);
         padding: 6px 16px;
         border-radius: 100px;
         font-size: 0.75rem;
@@ -40,18 +47,19 @@
         font-size: 2.5rem;
         font-weight: 800;
         color: white;
-        text-shadow: 0 0 20px rgba(34, 211, 238, 0.5);
+        text-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
     }
 
-    /* Loading Overlay */
+    /* Loading Overlay Animation */
     .loading-overlay {
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: #020617; z-index: 9999; display: flex;
+        background: var(--bg-dark); z-index: 9999; display: flex;
         flex-direction: column; justify-content: center; align-items: center;
+        transition: opacity 0.5s ease;
     }
     .scan-line {
-        width: 300px; height: 2px; background: @accentColor;
-        box-shadow: 0 0 15px @accentColor; position: relative; overflow: hidden; margin: 20px 0;
+        width: 300px; height: 2px; background: var(--accent-cyan);
+        box-shadow: 0 0 15px var(--accent-cyan); position: relative; overflow: hidden; margin: 20px 0;
     }
     .scan-line::after {
         content: ""; position: absolute; width: 100%; height: 100%;
@@ -60,13 +68,15 @@
     @@keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
 
     .btn-next-step {
-        background: @accentColor;
+        background: var(--accent-cyan);
         color: #0f172a;
         border: none;
         padding: 1rem 2rem;
         border-radius: 12px;
         font-weight: bold;
         transition: all 0.3s ease;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
     .btn-next-step:hover {
         background: white;
@@ -76,14 +86,14 @@
 </style>
 
 <div id="loader" class="loading-overlay">
-    <div class="text-info mb-2 tracking-widest fw-bold">UNDERSTANDING MARKET REALITY...</div>
+    <div class="text-info mb-2 tracking-widest fw-bold">MEMPROSES DATA E-STAT...</div>
     <div class="scan-line"></div>
-    <div class="text-white-50 small">Sinking data for @TempData["UserNama"]</div>
+    <div class="text-white-50 small">Sinkronisasi Benchmark Gaji Nasional: @Model.Title</div>
 </div>
 
 <div class="container py-5">
     <div class="row justify-content-center mb-5">
-        <div class="col-md-8 col-lg-6">
+        <div class="col-md-10 col-lg-8">
             <div class="stepper-wrapper">
                 <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Profil</div></div>
                 <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Kuesioner</div></div>
@@ -96,9 +106,9 @@
 
     <div class="row mb-5">
         <div class="col-lg-8">
-            <span class="insight-badge mb-3 d-inline-block text-uppercase">Tahap 1: Analisis Kesejahteraan Finansial</span>
-            <h1 class="display-4 fw-bold text-white">Berapa Gaji Anda di <span class="text-info">Jepang?</span></h1>
-            <p class="text-white-50 fs-5">Sistem membedah data <strong>e-Stat</strong> untuk bidang <strong>@Model.UserLocationChoice</strong> (Pilihan Anda).</p>
+            <span class="insight-badge mb-3 d-inline-block">KRITERIA C1: BENEFIT (GAJI)</span>
+            <h1 class="display-4 fw-bold text-white">Baseline Gaji <span class="text-info">@Model.Title</span></h1>
+            <p class="text-white-50 fs-5">Menggunakan standar gaji nasional Jepang untuk memberikan benchmark pendapatan yang objektif.</p>
         </div>
     </div>
 
@@ -106,50 +116,54 @@
         <div class="col-lg-8">
             <div class="consultation-card p-4 h-100">
                 <div class="d-flex justify-content-between align-items-center mb-4">
-                    <h5 class="text-white m-0"><i class="bi bi-graph-up-arrow me-2 text-info"></i>Tren Gaji 5 Tahun Terakhir</h5>
-                    <span class="text-white-50 small">Sumber: Ministry of Health, Labour and Welfare Japan</span>
+                    <h5 class="text-white m-0"><i class="bi bi-graph-up-arrow me-2 text-info"></i>Tren Gaji Tahunan (Nasional)</h5>
+                    <span class="badge bg-dark border border-secondary">Satuan: Yen</span>
                 </div>
                 
-                <div style="height: 350px;">
+                <div style="height: 350px; position: relative;">
                     <canvas id="salaryHistoryChart"></canvas>
                 </div>
 
-                <div class="mt-4 p-4 rounded-4" style="background: rgba(15, 23, 42, 0.5); border-left: 4px solid @accentColor;">
-                    <h6 class="text-info"><i class="bi bi-robot me-2"></i>Analisis Mentor Digital:</h6>
-                    <p class="text-white-50 m-0 lh-lg">@Model.DeepInsight</p>
+                <div class="mt-4 p-4 rounded-4" style="background: rgba(15, 23, 42, 0.5); border-left: 4px solid var(--accent-cyan);">
+                    <h6 class="text-info mb-2"><i class="bi bi-robot me-2"></i>Analisis Sistem:</h6>
+                    @* Menyesuaikan narasi agar menyebutkan angka yang sudah dikalikan 1000 *@
+                    <p class="text-white-50 m-0 lh-lg">
+                        "Berdasarkan dataset terbaru, bidang <strong>@Model.Title</strong> menunjukkan stabilitas pendapatan dengan rata-rata <strong>¥@latestSalary.ToString("N0")</strong> per bulan. Angka ini akan menjadi tolok ukur utama dalam menghitung rasio kesejahteraan di prefektur tujuan Anda."
+                    </p>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-4">
             <div class="consultation-card p-4 h-100 d-flex flex-column">
-                <div class="mb-4">
-                    <h6 class="text-white-50 small text-uppercase mb-3">Estimasi Gaji Terbaru</h6>
-                    <div class="salary-value-display">¥@Model.HistoryValues.LastOrDefault().ToString("N0")</div>
-                    <p class="text-info small mt-1">Per Tahun (Gross Income)</p>
+                <div class="mb-4 text-center text-lg-start">
+                    <h6 class="text-white-50 small text-uppercase mb-2">Estimasi Gaji Bulanan</h6>
+                    <div class="salary-value-display">
+                        ¥@latestSalary.ToString("N0")
+                    </div>
+                    <p class="text-info small mt-1">Rata-rata kotor (Sebelum Pajak & Asuransi)</p>
                 </div>
 
-                <hr class="border-secondary opacity-25">
-
-                <div class="my-4">
-                    <h6 class="text-white-50 small text-uppercase mb-3">Mengapa Ini Penting?</h6>
-                    <p class="text-white small">@Model.WhyItMatters</p>
+                <div class="p-3 rounded-4 mb-4" style="background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.1);">
+                    <h6 class="text-white small fw-bold mb-2">Pentingnya Data Ini:</h6>
+                    <p class="text-white-50 small mb-0">@Model.WhyItMatters</p>
                 </div>
 
                 <div class="mt-auto">
-                    <div class="p-3 rounded-3 mb-4" style="background: rgba(34, 211, 238, 0.05); border: 1px dashed rgba(34, 211, 238, 0.3);">
+                    <div class="p-3 rounded-3 mb-4" style="background: rgba(255, 255, 255, 0.02); border: 1px dashed rgba(255, 255, 255, 0.1);">
                         <div class="d-flex justify-content-between small mb-1">
-                            <span class="text-white-50">Data Processed:</span>
-                            <span class="text-white fw-bold">@Model.TotalDataProcessed Rows</span>
+                            <span class="text-white-50">Data Terproses:</span>
+                            @* Perbaikan: Mengambil count langsung dari List agar tidak 0 *@
+                            <span class="text-white">@(Model.HistoryValues?.Count ?? 0) baris tahunan</span>
                         </div>
                         <div class="d-flex justify-content-between small">
-                            <span class="text-white-50">Compute Speed:</span>
-                            <span class="text-info fw-bold">@Model.DataProcessingTime</span>
+                            <span class="text-white-50">Metode Analisis:</span>
+                            <span class="text-info">Normalisasi Benefit (SAW)</span>
                         </div>
                     </div>
 
-                    <a asp-controller="Analysis" asp-action="CPI" class="btn btn-next-step w-100">
-                        Lanjut ke Analisis Biaya Hidup <i class="bi bi-arrow-right ms-2"></i>
+                    <a asp-controller="Analysis" asp-action="Step" asp-route-id="CPI" class="btn btn-next-step w-100">
+                        Lanjut ke Analisis Biaya <i class="bi bi-arrow-right ms-2"></i>
                     </a>
                 </div>
             </div>
@@ -160,35 +174,35 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Loader Logic
         window.addEventListener('load', function() {
             setTimeout(() => {
                 const loader = document.getElementById('loader');
                 loader.style.opacity = '0';
                 setTimeout(() => loader.style.display = 'none', 500);
-            }, 1000);
+            }, 800);
         });
 
-        // Chart.js Configuration
         const ctx = document.getElementById('salaryHistoryChart').getContext('2d');
-        
-        // Gradient for chart
         const gradient = ctx.createLinearGradient(0, 0, 0, 400);
-        gradient.addColorStop(0, 'rgba(34, 211, 238, 0.4)');
+        gradient.addColorStop(0, 'rgba(34, 211, 238, 0.3)');
         gradient.addColorStop(1, 'rgba(34, 211, 238, 0.0)');
+
+        // Persiapan data dengan pengali 1000 agar grafik sinkron dengan angka di sidebar
+        const rawHistoryData = @Html.Raw(Json.Serialize(Model.HistoryValues));
+        const formattedHistoryData = rawHistoryData.map(val => val * 1000);
 
         new Chart(ctx, {
             type: 'line',
             data: {
                 labels: @Html.Raw(Json.Serialize(Model.HistoryLabels)),
                 datasets: [{
-                    label: 'Gaji Tahunan (Yen)',
-                    data: @Html.Raw(Json.Serialize(Model.HistoryValues)),
-                    borderColor: '@accentColor',
-                    borderWidth: 4,
-                    pointBackgroundColor: '@accentColor',
+                    label: 'Gaji (Yen)',
+                    data: formattedHistoryData,
+                    borderColor: '#22d3ee',
+                    borderWidth: 3,
+                    pointBackgroundColor: '#22d3ee',
                     pointBorderColor: '#fff',
-                    pointHoverRadius: 8,
+                    pointHoverRadius: 7,
                     fill: true,
                     backgroundColor: gradient,
                     tension: 0.4
@@ -200,15 +214,12 @@
                 plugins: {
                     legend: { display: false },
                     tooltip: {
+                        mode: 'index',
+                        intersect: false,
                         backgroundColor: '#1e293b',
                         titleColor: '#22d3ee',
-                        bodyColor: '#fff',
-                        padding: 12,
-                        displayColors: false,
                         callbacks: {
-                            label: function(context) {
-                                return ' ¥' + context.raw.toLocaleString();
-                            }
+                            label: (item) => ` ¥${item.raw.toLocaleString()}`
                         }
                     }
                 },
@@ -216,13 +227,13 @@
                     y: {
                         grid: { color: 'rgba(255,255,255,0.05)' },
                         ticks: { 
-                            color: '#94a3b8',
-                            callback: function(value) { return '¥' + (value/1000) + 'k'; }
+                            color: '#64748b',
+                            callback: (v) => '¥' + v.toLocaleString()
                         }
                     },
                     x: {
                         grid: { display: false },
-                        ticks: { color: '#94a3b8' }
+                        ticks: { color: '#64748b' }
                     }
                 }
             }

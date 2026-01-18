@@ -9,32 +9,48 @@ namespace SPKDomain.Entities
     /// </summary>
     public class Company
     {
-        // Sesuaikan dengan ind_code di CSV
+        // cat01_code (Contoh: AR, 06, D)
         public required string IndustryCode { get; set; }
 
-        public required string IndustryName { get; set; }
+        // industry_name_en (Contoh: All Industries, Construction, dsb)
+        public required string IndustryNameEn { get; set; }
 
+        // area_code (Contoh: 1000, 1100)
         public required string AreaCode { get; set; }
 
-        public required string AreaName { get; set; }
+        // Area (Nama asli dari dataset: Hokkaido, Sapporo-shi)
+        public required string AreaNameRaw { get; set; }
 
-        // Gunakan nama ini agar konsisten
+        // standardized_area_en (Contoh: Hokkaido) - Kunci Join
+        public required string StandardizedAreaEn { get; set; }
+
+        // area_level (Prefecture / City / National)
+        // Memastikan kita tidak menghitung ganda antara kota dan prefektur
+        public required string AreaLevel { get; set; }
+
+        // is_total_industry (1 jika 'All Industries', 0 jika spesifik)
+        public int IsTotalIndustry { get; set; }
+
+        // clean_value (Jumlah unit usaha/perusahaan)
         public double EstimatedCount { get; set; }
 
-        // Logika untuk membedakan Prefektur (Hokkaido, Aomori) dan Kota (Sapporo, Sendai)
-        // Berdasarkan dataset Anda, Prefektur memiliki AreaCode seperti 1000, 2000, 3000 (akhiran 000)
-        public bool IsPrefecture => AreaCode.EndsWith("000");
+        // Helper property untuk mempermudah filter di Repository/Service
+        public bool IsPrefectureLevel => AreaLevel == "Prefecture";
 
         public Company() { }
 
         [SetsRequiredMembers]
-        public Company(string industryCode, string industryName, string areaCode, string areaName, double estCount)
+        public Company(string industryCode, string industryNameEn, string areaCode, string areaNameRaw, 
+                       string standardizedAreaEn, string areaLevel, int isTotalIndustry, double estimatedCount)
         {
             IndustryCode = industryCode;
-            IndustryName = industryName;
+            IndustryNameEn = industryNameEn;
             AreaCode = areaCode;
-            AreaName = areaName;
-            EstimatedCount = estCount;
+            AreaNameRaw = areaNameRaw;
+            StandardizedAreaEn = standardizedAreaEn;
+            AreaLevel = areaLevel;
+            IsTotalIndustry = isTotalIndustry;
+            EstimatedCount = estimatedCount;
         }
     }
 }

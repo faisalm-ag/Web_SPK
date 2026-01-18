@@ -6,63 +6,82 @@ using SPKDomain.Models;
 namespace SPKCore.Services
 {
     /// <summary>
-    /// Service untuk menangani logika Machine Learning (Klasifikasi).
-    /// Memproses input kuesioner mahasiswa untuk memprediksi potensi kepuasan.
+    /// Service untuk menangani logika Machine Learning (Klasifikasi Kesiapan).
+    /// Memproses input kuesioner mahasiswa untuk memprediksi potensi kepuasan di Jepang.
     /// </summary>
     public class PredictionService
     {
         /// <summary>
-        /// Melakukan prediksi berdasarkan skor kuesioner yang dikirim dari UI.
+        /// Melakukan prediksi tingkat kesiapan/kepuasan berdasarkan skor kuesioner.
+        /// Menggunakan logika Heuristic Classification yang dapat ditingkatkan ke ML.NET.
         /// </summary>
-        /// <param name="answers">Kumpulan nilai jawaban (skala 1-5).</param>
-        /// <returns>Hasil prediksi berupa label dan tingkat kepercayaan.</returns>
+        /// <param name="answers">Kumpulan nilai jawaban kuesioner (1-5).</param>
+        /// <returns>Objek PredictionResult untuk laporan akhir.</returns>
         public PredictionResult PredictSatisfaction(List<int> answers)
         {
             if (answers == null || !answers.Any())
-                return new PredictionResult { PredictedLabel = "Tidak Diketahui", ConfidenceScore = 0 };
+            {
+                return new PredictionResult 
+                { 
+                    SatisfactionLevel = "Unknown", 
+                    Probability = 0.5,
+                    AnalysisSummary = "Data kuesioner tidak lengkap."
+                };
+            }
 
-            // 1. Hitung rata-rata skor kuesioner sebagai fitur utama (Feature Engineering sederhana)
+            // 1. Feature Engineering: Menghitung mean (fitur utama kesiapan)
             double averageScore = answers.Average();
             
-            // 2. Simulasi Model Klasifikasi (Threshold-based Classification)
-            // Dalam ML.NET, bagian ini digantikan oleh: _predictionEngine.Predict(input)
-            string label;
-            float confidence;
-            string recommendation;
+            // 2. Klasifikasi & Probability Mapping
+            // Logika ini mensimulasikan output dari algoritma Multi-class Classification
+            string level;
+            string summary;
+            double probability = averageScore / 5.0; // Normalisasi ke 0.0 - 1.0
 
-            if (averageScore >= 4.0)
+            if (averageScore >= 4.2)
             {
-                label = "Sangat Siap & Puas";
-                confidence = (float)(averageScore / 5.0);
-                recommendation = "Profil Anda menunjukkan kemandirian dan kesiapan mental yang sangat tinggi untuk budaya kerja Jepang.";
+                level = "High";
+                summary = "Profil menunjukkan kemandirian dan kesiapan mental yang luar biasa. Anda diprediksi akan sangat puas dengan budaya kerja di lokasi pilihan.";
             }
             else if (averageScore >= 3.0)
             {
-                label = "Siap & Puas";
-                confidence = (float)(averageScore / 5.0);
-                recommendation = "Anda memiliki potensi adaptasi yang baik, namun perlu penguatan pada aspek teknis bahasa.";
+                level = "Medium";
+                summary = "Anda memiliki potensi adaptasi yang baik. Kepuasan Anda akan bergantung pada dukungan komunitas di wilayah tujuan.";
             }
             else
             {
-                label = "Kurang Siap";
-                confidence = (float)(averageScore / 5.0);
-                recommendation = "Disarankan untuk mengikuti pelatihan tambahan sebelum keberangkatan agar tingkat kepuasan Anda terjaga.";
+                level = "Low";
+                summary = "Disarankan untuk memperkuat persiapan bahasa dan mental sebelum berangkat untuk menghindari 'culture shock' yang berat.";
             }
 
             return new PredictionResult
             {
-                PredictedLabel = label,
-                ConfidenceScore = confidence,
-                AnalysisSummary = recommendation
+                SatisfactionLevel = level,
+                Probability = Math.Round(probability, 2),
+                AnalysisSummary = summary
             };
         }
 
         /// <summary>
-        /// Menghitung skor numerik berdasarkan kuesioner untuk dikombinasikan dengan SAW.
+        /// Memberikan nilai bobot profil mahasiswa (0-1).
+        /// Digunakan sebagai pengali dalam perhitungan Final Eligibility Score.
         /// </summary>
-        public double GetProfileWeight(List<int> answers)
+        public double GetProfileReliability(List<int> answers)
         {
-            return answers.Any() ? answers.Average() / 5.0 : 0.5;
+            if (answers == null || !answers.Any()) return 0.5;
+            
+            // Memberikan penalti jika jawaban terlalu ekstrem (inkonsisten)
+            double stdDev = CalculateStandardDeviation(answers);
+            double baseScore = answers.Average() / 5.0;
+
+            return stdDev > 1.5 ? baseScore * 0.8 : baseScore;
+        }
+
+        private double CalculateStandardDeviation(List<int> values)
+        {
+            double avg = values.Average();
+            double sum = values.Sum(v => Math.Pow(v - avg, 2));
+            return Math.Sqrt(sum / values.Count);
         }
     }
 }

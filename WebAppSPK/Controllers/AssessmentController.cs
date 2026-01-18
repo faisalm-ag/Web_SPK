@@ -1,52 +1,37 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.Http;
 using SPKDomain.Interfaces;
 using SPKCore.Services;
 using WebAppSPK.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Text.Json;
 
 namespace WebAppSPK.Controllers
 {
     public class AssessmentController : Controller
     {
         private readonly IDataRepository _repository;
-        private readonly AnalysisService _analysisService; // Dependency Kamus Pusat
 
-        public AssessmentController(IDataRepository repository, AnalysisService analysisService)
+        public AssessmentController(IDataRepository repository)
         {
             _repository = repository;
-            _analysisService = analysisService;
         }
 
         [HttpGet]
         public async Task<IActionResult> Biodata()
         {
-            var salaries = await _repository.GetSalariesAsync();
-            var populations = await _repository.GetPopulationsAsync();
+            // Mengambil data unik langsung dari metode repository yang baru
+            var areas = await _repository.GetAvailableAreasAsync();
+            var jobs = await _repository.GetAvailableJobsAsync();
 
             var viewModel = new BiodataVM
             {
-                // Menggunakan _analysisService.Translate untuk mapping Bidang Pekerjaan
-                BidangOptions = salaries.Select(s => s.JobName).Distinct()
-                    .Select(name => new SelectListItem 
-                    { 
-                        Value = name, 
-                        Text = _analysisService.Translate(name) 
-                    })
-                    .OrderBy(x => x.Text)
-                    .ToList(),
-                
-                // Menggunakan _analysisService.Translate untuk mapping Prefektur
-                PrefekturOptions = populations.Select(p => p.AreaName).Distinct()
-                    .Select(name => new SelectListItem 
-                    { 
-                        Value = name, 
-                        Text = _analysisService.Translate(name)
-                    })
-                    .OrderBy(x => x.Text)
-                    .ToList()
+                // Mapping otomatis dari List<string> ke List<SelectListItem>
+                PrefekturOptions = areas.Select(a => new SelectListItem { Value = a, Text = a }).ToList(),
+                BidangOptions = jobs.Select(j => new SelectListItem { Value = j, Text = j }).ToList()
             };
 
             return View(viewModel);
@@ -58,9 +43,10 @@ namespace WebAppSPK.Controllers
         {
             if (!ModelState.IsValid) return View(model);
 
-            TempData["UserNama"] = model.Nama;
-            TempData["UserLokasi"] = model.Lokasi;
-            TempData["UserBidang"] = model.Bidang;
+            // Simpan ke Session agar tahan lama sampai laporan akhir
+            HttpContext.Session.SetString("UserNama", model.Nama);
+            HttpContext.Session.SetString("SelectedArea", model.Lokasi);
+            HttpContext.Session.SetString("SelectedJob", model.Bidang);
 
             return RedirectToAction("Kuesioner");
         }
@@ -68,15 +54,18 @@ namespace WebAppSPK.Controllers
         [HttpGet]
         public IActionResult Kuesioner()
         {
-            if (TempData["UserNama"] == null) return RedirectToAction("Biodata");
-            TempData.Keep(); 
+            if (string.IsNullOrEmpty(HttpContext.Session.GetString("UserNama"))) 
+                return RedirectToAction("Biodata");
 
             var questions = new List<QuestionVM>
             {
+                // SAW Criteria (Weights)
                 new() { Index = 0, Category = "Salary", Text = "Seberapa penting faktor GAJI TINGGI bagi Anda?" },
                 new() { Index = 1, Category = "CPI", Text = "Seberapa besar kekhawatiran Anda terhadap BIAYA HIDUP?" },
                 new() { Index = 2, Category = "Company", Text = "Seberapa penting kemudahan menemukan PELUANG KERJA?" },
                 new() { Index = 3, Category = "Population", Text = "Apakah Anda menyukai LINGKUNGAN RAMAI (Kota Besar)?" },
+                
+                // ML Criteria (Preparedness)
                 new() { Index = 4, Category = "Komitmen", Text = "Tetap belajar Kanji 2 jam tanpa distraksi meski lelah?" },
                 new() { Index = 5, Category = "Adaptasi", Text = "Sanggup tidak memegang smartphone selama 8 jam kerja?" },
                 new() { Index = 6, Category = "Mental", Text = "Mampu bertahan saat homesick berat tanpa berniat pulang?" },
@@ -93,14 +82,13 @@ namespace WebAppSPK.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Kuesioner(List<QuestionVM> answers)
         {
-            if (answers == null || !answers.Any()) 
-            {
-                TempData.Keep();
-                return RedirectToAction("Kuesioner");
-            }
-            var scores = answers.OrderBy(a => a.Index).Select(a => a.SelectedScore).ToArray();
-            TempData["Answers"] = scores;
-            TempData.Keep();
+            if (answers == null || !answers.Any()) return RedirectToAction("Kuesioner");
+
+            var scores = answers.OrderBy(a => a.Index).Select(a => a.SelectedScore).ToList();
+            
+            // Simpan jawaban ke Session dalam bentuk JSON
+            HttpContext.Session.SetString("UserAnswers", JsonSerializer.Serialize(scores));
+            
             return RedirectToAction("Gaji", "Analysis");
         }
     }

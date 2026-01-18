@@ -5,105 +5,251 @@
 }
 
 <style>
-    /* Stepper UI */
-    .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; }
-    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
-    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid rgba(255,255,255,0.1); width: 100%; top: 20px; left: -50%; z-index: 2; }
-    .stepper-item:first-child::before { content: none; }
-    .step-counter { position: relative; z-index: 5; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; border: 2px solid rgba(255,255,255,0.1); color: white; font-weight: bold; margin-bottom: 10px; }
-    .stepper-item.active .step-counter { background: var(--accent-pink); border-color: var(--accent-pink); box-shadow: 0 0 15px rgba(255, 20, 147, 0.4); }
-    .step-name { color: rgba(255,255,255,0.5); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
-    .active .step-name { color: white; font-weight: bold; }
-
-    /* Card & Form Enhancements */
-    .glass-card { background: rgba(255, 255, 255, 0.03); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 28px; }
-    .form-label-custom { color: var(--accent-pink); font-weight: 700; margin-bottom: 8px; display: block; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 1.5px; }
-
-    /* PERBAIKAN: Input & Dropdown Dark Mode */
-    .form-control, .form-select {
-        background-color: #0f172a !important; /* Biru gelap/hitam */
-        color: white !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        border-radius: 12px;
-        padding: 12px 15px;
+    :root {
+        --bg-primary: #020617;
+        --accent-pink: #FF1493;
+        --accent-glow: rgba(255, 20, 147, 0.25);
+        --card-bg: rgba(255, 255, 255, 0.03);
+        --input-bg: #0f172a;
+        --text-muted: rgba(255,255,255,0.6);
     }
 
-    /* Saat opsi dropdown dibuka */
-    .form-select option {
-        background-color: #020617 !important;
-        color: white !important;
+    body {
+        background: var(--bg-primary);
+        color: white;
+        font-family: 'Plus Jakarta Sans', sans-serif;
     }
 
-    .form-control:focus, .form-select:focus {
-        border-color: var(--accent-pink) !important;
-        box-shadow: 0 0 0 0.25rem rgba(255, 20, 147, 0.2) !important;
+    /* ===== Stepper ===== */
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+    }
+
+    .stepper-item {
+        position: relative;
+        flex: 1;
+        text-align: center;
+    }
+
+    .stepper-item::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: -50%;
+        width: 100%;
+        height: 2px;
+        background: rgba(255,255,255,0.08);
+        z-index: 1;
+    }
+
+    .stepper-item:first-child::before {
+        display: none;
+    }
+
+    .step-counter {
+        width: 40px;
+        height: 40px;
+        margin: auto;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.05);
+        border: 1px solid rgba(255,255,255,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        z-index: 2;
+        position: relative;
+    }
+
+    .stepper-item.active .step-counter {
+        background: var(--accent-pink);
+        border-color: var(--accent-pink);
+        box-shadow: 0 0 20px var(--accent-glow);
+    }
+
+    .step-name {
+        margin-top: 8px;
+        font-size: 0.7rem;
+        letter-spacing: 1.2px;
+        text-transform: uppercase;
+        color: var(--text-muted);
+    }
+
+    .stepper-item.active .step-name {
+        color: white;
+        font-weight: 600;
+    }
+
+    /* ===== Glass Card ===== */
+    .glass-card {
+        background: var(--card-bg);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255,255,255,0.1);
+        border-radius: 24px;
+        box-shadow: 0 8px 32px rgba(255, 20, 147, 0.15);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .glass-card:hover {
+        transform: translateY(-5px);
+    }
+
+    /* ===== Typography ===== */
+    .gradient-title {
+        font-weight: 800;
+        letter-spacing: -0.02em;
+    }
+
+    .gradient-title span {
+        background: linear-gradient(90deg, #FF1493, #6366f1);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+
+    /* ===== Form ===== */
+    .form-label-custom {
+        color: var(--accent-pink);
+        font-weight: 700;
+        font-size: 0.75rem;
+        letter-spacing: 1.4px;
+        text-transform: uppercase;
+        margin-bottom: 6px;
+        display: block;
+    }
+
+    .form-control,
+    .form-select {
+        background: var(--input-bg);
+        color: white;
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 14px;
+        padding: 12px 16px;
+    }
+
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--accent-pink);
+        box-shadow: 0 0 12px var(--accent-glow);
         outline: none;
     }
 
-    /* PERBAIKAN: Card Privasi (Tidak putih) */
+    .form-select option {
+        background: var(--input-bg);
+        color: white;
+    }
+
+    /* ===== CTA Button ===== */
+    .btn-spk {
+        background: var(--accent-pink);
+        border: none;
+        border-radius: 14px;
+        font-weight: 700;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .btn-spk:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0 25px var(--accent-glow);
+    }
+
+    /* ===== Privacy Notice ===== */
     .privacy-notice {
-        background: linear-gradient(135deg, rgba(255, 20, 147, 0.1) 0%, rgba(0, 0, 0, 0) 100%);
-        border: 1px dashed rgba(255, 20, 147, 0.3);
+        background: linear-gradient(135deg, rgba(255,20,147,0.06), transparent);
+        border: 1px dashed rgba(255,20,147,0.3);
         border-radius: 20px;
+    }
+
+    .text-pink {
+        color: var(--accent-pink);
     }
 </style>
 
 <div class="container py-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
+    <div class="row justify-content-center mb-5">
+        <div class="col-md-8 col-lg-7">
             <div class="stepper-wrapper">
-                <div class="stepper-item active"><div class="step-counter">1</div><div class="step-name">Biodata</div></div>
-                <div class="stepper-item"><div class="step-counter">2</div><div class="step-name">Kuesioner</div></div>
-                <div class="stepper-item"><div class="step-counter">3</div><div class="step-name">Analisis</div></div>
-                <div class="stepper-item"><div class="step-counter">4</div><div class="step-name">Hasil</div></div>
+                <div class="stepper-item active">
+                    <div class="step-counter">1</div>
+                    <div class="step-name">Biodata</div>
+                </div>
+                <div class="stepper-item">
+                    <div class="step-counter">2</div>
+                    <div class="step-name">Kuesioner</div>
+                </div>
+                <div class="stepper-item">
+                    <div class="step-counter">3</div>
+                    <div class="step-name">Analisis</div>
+                </div>
+                <div class="stepper-item">
+                    <div class="step-counter">4</div>
+                    <div class="step-name">Hasil</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="row justify-content-center align-items-center">
-        <div class="col-lg-5 d-none d-lg-block pe-lg-5">
-            <h2 class="fw-800 text-white mb-4">Mulai Perjalanan <br><span class="text-pink">Karir Global Anda</span></h2>
-            <p class="text-white-50 mb-4">Masukkan data dasar Anda. Sistem kami akan menyesuaikan dataset ekonomi Jepang (Gaji & Biaya Hidup) berdasarkan bidang pekerjaan yang Anda pilih.</p>
-            
-            <div class="d-flex align-items-center gap-3 p-4 privacy-notice">
-                <i class="bi bi-shield-check text-pink fs-2"></i>
-                <div class="small text-white-50">
-                    <strong class="text-white d-block mb-1">Keamanan Data</strong>
-                    Data Anda diproses secara lokal untuk keperluan kalkulasi skor SAW dan tidak disebarluaskan.
+    <div class="row justify-content-center align-items-center g-5">
+        <div class="col-lg-5 d-none d-lg-block">
+            <h1 class="display-5 gradient-title mb-4">
+                Mulai Perjalanan <br>
+                <span>Karir Global Anda</span>
+            </h1>
+            <p class="lead text-white-50 mb-4">
+                Sistem pendukung keputusan ini membantu mahasiswa STT Cipasung menentukan lokasi magang terbaik di Jepang secara objektif berdasarkan data real e-Stat.
+            </p>
+
+            <div class="d-flex gap-3 p-4 privacy-notice align-items-center">
+                <i class="bi bi-shield-lock-fill text-pink fs-1"></i>
+                <div class="small">
+                    <strong class="text-white d-block">Data Real-Time</strong>
+                    <span class="text-white-50">
+                        Dataset resmi Pemerintah Jepang terbaru.
+                    </span>
                 </div>
             </div>
         </div>
 
         <div class="col-md-8 col-lg-5">
-            <div class="glass-card p-4 p-md-5 shadow-lg">
+            <div class="glass-card p-4 p-md-5">
                 <form asp-action="Biodata" method="post">
                     <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 
                     <div class="mb-4">
-                        <label asp-for="Nama" class="form-label-custom"><i class="bi bi-person-badge me-2"></i>Nama Lengkap</label>
-                        <input asp-for="Nama" type="text" class="form-control" placeholder="Masukkan nama Anda..." required>
-                        <span asp-validation-for="Nama" class="text-danger small"></span>
+                        <label asp-for="Nama" class="form-label-custom">
+                            <i class="bi bi-person-circle me-2"></i>Nama Lengkap
+                        </label>
+                        <input asp-for="Nama" class="form-control" placeholder="Masukkan nama lengkap..." required />
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Lokasi" class="form-label-custom"><i class="bi bi-geo-alt me-2"></i>Prefektur Target (Opsional)</label>
+                        <label asp-for="Lokasi" class="form-label-custom">
+                            <i class="bi bi-map-fill me-2"></i>Prefektur Minat
+                        </label>
                         <select asp-for="Lokasi" class="form-select" asp-items="Model.PrefekturOptions" required>
-                            <option value="" disabled selected>Pilih lokasi (Romaji)...</option>
+                            <option value="" disabled selected>Pilih prefektur...</option>
                         </select>
-                        <span asp-validation-for="Lokasi" class="text-danger small"></span>
                     </div>
 
                     <div class="mb-5">
-                        <label asp-for="Bidang" class="form-label-custom"><i class="bi bi-briefcase me-2"></i>Sektor Pekerjaan</label>
+                        <label asp-for="Bidang" class="form-label-custom">
+                            <i class="bi bi-gear-wide-connected me-2"></i>Sektor Pekerjaan
+                        </label>
                         <select asp-for="Bidang" class="form-select" asp-items="Model.BidangOptions" required>
-                            <option value="" disabled selected>Pilih bidang keahlian...</option>
+                            <option value="" disabled selected>Pilih sektor...</option>
                         </select>
-                        <span asp-validation-for="Bidang" class="text-danger small"></span>
                     </div>
 
-                    <button type="submit" class="btn-spk w-100 py-3">
-                        Lanjut ke Kuesioner <i class="bi bi-arrow-right-short fs-4"></i>
+                    <button type="submit" class="btn btn-spk w-100 py-3 mb-3">
+                        Lanjut ke Kuesioner <i class="bi bi-arrow-right-circle-fill ms-2"></i>
                     </button>
+
+                    <p class="text-center text-white-50 small mb-0">
+                        Langkah @Model.CurrentStep dari @Model.TotalSteps
+                    </p>
                 </form>
             </div>
         </div>
@@ -111,5 +257,5 @@
 </div>
 
 @section Scripts {
-    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
 }

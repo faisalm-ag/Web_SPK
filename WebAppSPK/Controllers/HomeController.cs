@@ -19,10 +19,13 @@ namespace WebAppSPK.Controllers
 
         public IActionResult Index()
         {
+            // Reset TempData jika user kembali ke Home untuk memulai konsultasi baru
+            TempData.Clear();
+
             // Menyiapkan informasi transparan untuk Landing Page (Transparansi Sistem)
             ViewData["DataSource"] = "e-Stat Japan (Official Government Statistics)";
             ViewData["AnalysisMethod"] = "Simple Additive Weighting (SAW)";
-            ViewData["MLModel"] = "Sentiment & Readiness Classifier";
+            ViewData["MLModel"] = "Heuristic Readiness Classifier";
             ViewData["LastUpdate"] = "2024-2025 Dataset Cycle";
             
             return View();

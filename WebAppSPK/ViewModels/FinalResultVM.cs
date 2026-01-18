@@ -6,70 +6,70 @@ using SPKDomain.Models;
 namespace WebAppSPK.ViewModels
 {
     /// <summary>
-    /// ViewModel Utama untuk Laporan Akhir (Final Report).
-    /// Berfungsi sebagai Dashboard Konsultasi yang menggabungkan ML, SAW, dan Narasi Strategis.
+    /// ViewModel Utama untuk Laporan Akhir (Consultancy Mode).
     /// </summary>
     public class FinalResultVM
     {
-        // --- 1. Identitas & Biodata ---
+        // --- 1. Identitas & Tracking ---
+        public string ReportId { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 8).ToUpper();
         public string Nama { get; set; } = string.Empty;
         public string BidangPekerjaan { get; set; } = string.Empty;
         public string LokasiPilihan { get; set; } = string.Empty;
 
-        // --- 2. Hasil Machine Learning (Prediksi Kesiapan Mental) ---
-        public PredictionResult Prediction { get; set; } = new PredictionResult();
-        public double MentalReadinessScore => (Prediction != null) ? Math.Round(Prediction.Probability * 100, 1) : 0;
+        // --- 2. Pilar Kesiapan Mental (Radar Chart) ---
+        public double ScoreDisiplinEtika { get; set; }  
+        public double ScoreKetahananDiri { get; set; }  
+        public double ScoreAdaptasiSosial { get; set; } 
+        public double MentalReadinessScore => (Prediction != null) ? Math.Round(Prediction.Probability * 100, 1) : 50.0;
+        public PredictionResult Prediction { get; set; } = new();
 
-        // --- 3. Hasil Perhitungan SAW (Ranking Lokasi dari Dataset e-Stat) ---
-        public List<SAWResult> Rankings { get; set; } = new List<SAWResult>();
+        // --- 3. Hasil Ekonomi (SAW - Dataset e-Stat) ---
+        public List<SAWResult> Rankings { get; set; } = new();
         public SAWResult? TopRecommendation => Rankings.OrderByDescending(r => r.TotalScore).FirstOrDefault();
+        
+        // --- PERBAIKAN: Mengambil data langsung dari hasil Choice Service agar tidak null meski di luar Top 5 ---
+        public SAWResult? UserChosenLocationResult { get; set; }
 
-        // --- 4. Skor Kelayakan & Vonis Akhir (The Decision) ---
-        // Gabungan antara Skor Mental dan Skor Data Ekonomi
+        // --- 4. Skor Akhir & Keputusan ---
         public double EligibilityScore { get; set; } 
-        public string RecommendationCategory { get; set; } = string.Empty; // Sangat Layak, Dipertimbangkan, dll.
-        public string SummaryMessage { get; set; } = string.Empty;
+        public string RecommendationCategory { get; set; } = "Dipertimbangkan"; 
+        
+        public string SummaryMessage { get; set; } = string.Empty; 
+        public string ScoreExplanation { get; set; } = string.Empty; 
 
-        // --- 5. Analisis SWOT (Strategi Konsultasi) ---
-        public List<string> Strengths { get; set; } = new List<string>();
-        public List<string> Weaknesses { get; set; } = new List<string>();
-        public List<string> Opportunities { get; set; } = new List<string>();
-        public List<string> Threats { get; set; } = new List<string>();
+        // --- 5. Nasihat Konsultatif ---
+        public string SectionIntroPersonal { get; set; } = string.Empty; 
+        public List<string> PersonalStrengths { get; set; } = new(); 
+        public List<string> PersonalWeaknesses { get; set; } = new();
+        public string FinancialAdvice { get; set; } = string.Empty;     
+        public string FamilyPermissionAdvice { get; set; } = string.Empty; 
+        public string CareerInsight { get; set; } = string.Empty;      
 
-        // --- 6. Pesan Humanis (Khusus STT Cipasung) ---
-        public string FinancialAdvice { get; set; } = string.Empty;     // Contoh: Simulasi tabungan
-        public string FamilyPermissionAdvice { get; set; } = string.Empty; // Bahan bicara ke orang tua
-        public string CareerInsight { get; set; } = string.Empty;      // Peluang masa depan
+        // --- 6. Pesan Kebijaksanaan ---
+        public string DecisionDisclaimer { get; set; } = string.Empty;
 
-        // --- 7. Data Transparansi Bobot ---
+        // --- 7. Transparansi Kriteria ---
         public double WeightSalary { get; set; }
         public double WeightCPI { get; set; }
         public double WeightCompany { get; set; }
         public double WeightPopulation { get; set; }
 
-        // --- HELPER UNTUK VISUALISASI ---
-        
-        // Warna Status untuk Gauge Chart dan UI Alerts
+        // --- 8. Helper Skor Normalisasi (Perbaikan: Menggunakan pengali 100 agar tampil sebagai persentase) ---
+        public double ScoreC1 => Math.Round((UserChosenLocationResult?.NormalizedSalary ?? 0) * 100, 1);
+        public double ScoreC2 => Math.Round((UserChosenLocationResult?.NormalizedCPI ?? 0) * 100, 1);
+        public double ScoreC3 => Math.Round((UserChosenLocationResult?.NormalizedCompany ?? 0) * 100, 1);
+        public double ScoreC4 => Math.Round((UserChosenLocationResult?.NormalizedPopulation ?? 0) * 100, 1);
+
+        // --- UI Logic Helpers ---
         public string StatusColor => EligibilityScore switch
         {
-            >= 80 => "success", // Hijau
-            >= 65 => "warning", // Kuning
-            _ => "danger"       // Merah
+            >= 80 => "success",
+            >= 65 => "warning",
+            _ => "danger"
         };
 
-        // Data untuk Radar Chart (Kekuatan Lokasi No. 1)
-        public List<double> TopLocationScores => TopRecommendation != null 
-            ? new List<double> { 
-                TopRecommendation.NormalizedSalary, 
-                TopRecommendation.NormalizedCPI, 
-                TopRecommendation.NormalizedCompany, 
-                TopRecommendation.NormalizedPopulation 
-              } 
-            : new List<double>();
-            
-        // Menghitung potensi sisa uang (Gaji - CPI) dalam Yen
-        public double EstimatedMonthlySaving => TopRecommendation != null 
-            ? (TopRecommendation.RawSalary - (TopRecommendation.RawCPI * 1000)) // Asumsi skala CPI
-            : 0;
+        public bool IsUserChoiceTheBest => TopRecommendation != null && 
+                                          UserChosenLocationResult != null &&
+                                          TopRecommendation.AreaName.Equals(UserChosenLocationResult.AreaName, StringComparison.OrdinalIgnoreCase);
     }
 }

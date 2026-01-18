@@ -1,132 +1,290 @@
 @model List<WebAppSPK.ViewModels.QuestionVM>
 @{
-    ViewData["Title"] = "Deep Assessment - Kesiapan Karir";
+    ViewData["Title"] = "Assessment - STARTJAP";
 }
 
 <style>
-    :root { 
-        --cyan-neon: #22d3ee; 
-        --bg-dark: #020617; 
+    :root {
+        --primary-bg: #020617;
         --accent-pink: #FF1493;
-        --glass-border: rgba(255, 255, 255, 0.08);
+        --accent-pink-hover: #db127d;
+        --glass-border: rgba(255,255,255,0.1);
+        --glass-bg: rgba(255,255,255,0.03);
+        --pink-glow: rgba(255,20,147,0.25);
     }
-    
-    body { background-color: var(--bg-dark); color: white; }
 
-    /* Stepper UI */
-    .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; position: relative; }
-    .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; z-index: 1; }
-    .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid var(--glass-border); width: 100%; top: 20px; left: -50%; z-index: -1; }
-    .stepper-item:first-child::before { content: none; }
-    .step-counter { width: 40px; height: 40px; border-radius: 50%; background: #111; border: 2px solid var(--glass-border); color: white; display: flex; align-items: center; justify-content: center; font-weight: bold; transition: 0.3s; }
-    .stepper-item.active .step-counter { background: var(--accent-pink); border-color: var(--accent-pink); box-shadow: 0 0 15px var(--accent-pink); }
-    .stepper-item.completed .step-counter { background: #059669; border-color: #059669; }
+    body {
+        background: var(--primary-bg);
+        color: #fff;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        overflow-x: hidden;
+    }
 
-    /* Sticky Progress */
-    .sticky-progress { position: fixed; top: 0; left: 0; width: 100%; height: 6px; background: rgba(255,255,255,0.05); z-index: 2000; }
-    #progressFill { height: 100%; width: 0%; background: linear-gradient(90deg, #22d3ee, #FF1493); box-shadow: 0 0 15px var(--cyan-neon); transition: width 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+    /* ================= PROGRESS BAR ================= */
+    .sticky-progress {
+        position: fixed;
+        top: 0; left: 0;
+        width: 100%;
+        height: 4px;
+        background: rgba(255,255,255,0.06);
+        z-index: 2000;
+    }
 
-    /* Card Styling - High Symmetry */
-    .question-card { 
-        background: linear-gradient(145deg, rgba(30,41,59,0.4), rgba(15,23,42,0.6)); 
-        backdrop-filter: blur(15px); 
-        border-radius: 24px; 
-        padding: 30px; 
-        border: 1px solid var(--glass-border);
-        transition: all 0.4s ease;
+    #progressFill {
+        height: 100%;
+        width: 0%;
+        background: linear-gradient(90deg, var(--accent-pink), #6366f1);
+        box-shadow: 0 0 20px var(--accent-pink);
+        transition: width 0.4s ease;
+    }
+
+    /* ================= STEPPER ================= */
+    .stepper-wrapper {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
         position: relative;
-        overflow: hidden;
+    }
+
+    .stepper-item {
+        position: relative;
+        flex: 1;
         display: flex;
         flex-direction: column;
-        height: 100%; /* Memaksa tinggi sama dalam baris yang sama */
+        align-items: center;
+        z-index: 1;
     }
-    .question-card:hover { border-color: var(--cyan-neon); transform: translateY(-5px); background: rgba(30,41,59,0.6); }
-    .question-number { position: absolute; right: -5px; top: -15px; font-size: 4.5rem; font-weight: 900; color: rgba(255,255,255,0.03); pointer-events: none; }
 
-    .section-divider { border-left: 5px solid var(--accent-pink); padding-left: 15px; margin: 60px 0 30px; letter-spacing: 2px; }
+    .stepper-item::before {
+        content: "";
+        position: absolute;
+        top: 20px;
+        left: -50%;
+        width: 100%;
+        border-bottom: 2px solid var(--glass-border);
+        z-index: -1;
+    }
 
-    /* Likert Scale Interactive */
-    .likert-container { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: auto; padding-top: 25px; }
-    .likert-label { font-size: 0.65rem; font-weight: 700; color: rgba(255,255,255,0.4); text-transform: uppercase; width: 75px; text-align: center; line-height: 1.2; }
-    
-    .likert-options { display: flex; gap: 8px; }
-    .likert-btn {
-        width: 46px; height: 46px;
-        display: flex; align-items: center; justify-content: center;
+    .stepper-item:first-child::before {
+        display: none;
+    }
+
+    .step-counter {
+        width: 40px;
+        height: 40px;
         border-radius: 50%;
-        border: 2px solid var(--glass-border);
-        cursor: pointer; color: white; font-weight: 700;
-        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        background: rgba(255,255,255,0.02);
+        background: var(--glass-bg);
+        backdrop-filter: blur(10px);
+        border: 1px solid var(--glass-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
     }
-    .likert-btn:hover { border-color: var(--cyan-neon); color: var(--cyan-neon); transform: scale(1.1); }
-    
+
+    .stepper-item.active .step-counter {
+        background: var(--accent-pink);
+        border-color: var(--accent-pink);
+        box-shadow: 0 0 20px var(--accent-pink);
+    }
+
+    .stepper-item.completed .step-counter {
+        background: #059669;
+        border-color: #059669;
+    }
+
+    .step-name {
+        margin-top: 8px;
+        font-size: 0.65rem;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.5);
+    }
+
+    /* ================= SECTION DIVIDER ================= */
+    .section-divider {
+        border-left: 4px solid var(--accent-pink);
+        padding-left: 16px;
+        margin: 60px 0 30px;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+        font-size: 1rem;
+    }
+
+    /* ================= QUESTION CARD ================= */
+    .question-card {
+        background: var(--glass-bg);
+        backdrop-filter: blur(15px);
+        border-radius: 24px;
+        border: 1px solid var(--glass-border);
+        padding: 32px;
+        position: relative;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+
+    .question-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 16px 48px var(--pink-glow);
+        border-color: var(--accent-pink);
+    }
+
+    .question-number {
+        position: absolute;
+        top: -20px;
+        right: 20px;
+        font-size: 4.5rem;
+        font-weight: 900;
+        color: rgba(255,255,255,0.04);
+        pointer-events: none;
+    }
+
+    .card-category {
+        font-size: 0.65rem;
+        font-weight: 800;
+        letter-spacing: 0.18em;
+        color: var(--accent-pink);
+        margin-bottom: 10px;
+        display: block;
+        text-transform: uppercase;
+    }
+
+    /* ================= LIKERT ================= */
+    .likert-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        margin-top: auto;
+        padding-top: 30px;
+    }
+
+    .likert-label {
+        width: 80px;
+        font-size: 0.6rem;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        color: rgba(255,255,255,0.45);
+    }
+
+    .likert-options {
+        display: flex;
+        gap: 10px;
+    }
+
+    .likert-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        border: 1px solid var(--glass-border);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        font-weight: 700;
+        background: rgba(255,255,255,0.02);
+        transition: all 0.3s cubic-bezier(0.175,0.885,0.32,1.275);
+    }
+
+    .likert-btn:hover {
+        transform: translateY(-3px);
+        border-color: var(--accent-pink);
+    }
+
     .btn-check:checked + .likert-btn {
-        background: var(--cyan-neon); border-color: var(--cyan-neon);
-        color: var(--bg-dark); box-shadow: 0 0 20px var(--cyan-neon);
+        background: var(--accent-pink);
+        border-color: var(--accent-pink);
+        box-shadow: 0 0 20px var(--accent-pink);
         transform: scale(1.15);
     }
 
+    /* ================= SUBMIT ================= */
     .btn-generate {
-        background: linear-gradient(45deg, var(--accent-pink), #8b5cf6);
-        color: white; border: none; border-radius: 50px;
-        font-weight: 800; padding: 18px 45px;
-        letter-spacing: 2px; transition: 0.4s;
-        box-shadow: 0 10px 30px rgba(255, 20, 147, 0.3);
+        background: linear-gradient(135deg, var(--accent-pink), #6366f1);
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        font-weight: 800;
+        padding: 18px 48px;
+        letter-spacing: 0.15em;
+        text-transform: uppercase;
+        transition: all 0.4s cubic-bezier(0.175,0.885,0.32,1.275);
+        box-shadow: 0 12px 36px rgba(255,20,147,0.35);
     }
-    .btn-generate:hover { transform: translateY(-3px) scale(1.02); box-shadow: 0 15px 40px rgba(255, 20, 147, 0.5); color: white; }
-    
-    .card-category { font-size: 0.7rem; font-weight: 800; color: var(--cyan-neon); letter-spacing: 1.5px; margin-bottom: 10px; display: block; }
+
+    .btn-generate:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 50px rgba(255,20,147,0.5);
+        color: #fff;
+    }
 </style>
 
-<div class="sticky-progress"><div id="progressFill"></div></div>
+<div class="sticky-progress">
+    <div id="progressFill"></div>
+</div>
 
 <div class="container py-5">
+
+    <!-- ================= HEADER ================= -->
     <div class="row justify-content-center mb-5">
         <div class="col-md-8 text-center">
             <div class="stepper-wrapper mb-4">
-                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check-lg"></i></div><div class="step-name small">Biodata</div></div>
-                <div class="stepper-item active"><div class="step-counter">2</div><div class="step-name small">Kuesioner</div></div>
-                <div class="stepper-item"><div class="step-counter">3</div><div class="step-name small">Analisis</div></div>
-                <div class="stepper-item"><div class="step-counter">4</div><div class="step-name small">Hasil</div></div>
+                <div class="stepper-item completed">
+                    <div class="step-counter"><i class="bi bi-check-lg"></i></div>
+                    <div class="step-name">Biodata</div>
+                </div>
+                <div class="stepper-item active">
+                    <div class="step-counter">2</div>
+                    <div class="step-name">Kuesioner</div>
+                </div>
+                <div class="stepper-item">
+                    <div class="step-counter">3</div>
+                    <div class="step-name">Analisis</div>
+                </div>
+                <div class="stepper-item">
+                    <div class="step-counter">4</div>
+                    <div class="step-name">Hasil</div>
+                </div>
             </div>
-            <h1 class="display-4 fw-900 text-white mb-2">Mental <span style="color:var(--accent-pink)">Readiness</span></h1>
-            <p class="text-white-50">Lengkapi asesmen di bawah ini untuk memulai kalkulasi algoritma rekomendasi.</p>
+
+            <img src="~/images/logo-startjap.png" style="width:50px" class="mb-3" />
+            <h1 class="fw-bold text-white mb-2">
+                Penilaian <span style="color:var(--accent-pink)">Kesiapan Karir</span>
+            </h1>
+            <p class="text-white-50">
+                Silakan isi preferensi Anda di bawah ini. Pastikan tidak ada poin yang terlewat.
+            </p>
         </div>
     </div>
 
     <form asp-action="Kuesioner" method="post" id="kuesionerForm">
         @Html.AntiForgeryToken()
 
-        <h4 class="section-divider text-white fw-bold">PHASE 01: ECONOMIC PRIORITIES</h4>
+        <h4 class="section-divider text-white fw-bold">Tahap 01: Prioritas Ekonomi & Lingkungan</h4>
         <div class="row g-4">
             @for (int i = 0; i < 4; i++)
             {
-                <div class="col-md-6 d-flex"> @{ 
-                        var deepQuestion = i switch {
-                            0 => "Seberapa krusial selisih gaji bagi Anda? Apakah Anda rela mengabaikan kenyamanan demi angka pendapatan yang maksimal?",
-                            1 => "Seberapa sensitif Anda terhadap pengeluaran harian? Apakah biaya hidup murah lebih tenang bagi mental Anda dibanding gaji besar?",
-                            2 => "Seberapa besar keinginan Anda memiliki banyak opsi cadangan kerja jika suatu saat tempat kerja utama mengalami kendala?",
-                            3 => "Seberapa butuh Anda akan interaksi sosial dan keramaian kota? Mampukah Anda bertahan di pedesaan Jepang yang sunyi?",
-                            _ => Model[i].Text
-                        };
-                    }
+                <div class="col-md-6 d-flex">
                     <input type="hidden" name="[@i].Index" value="@Model[i].Index" />
                     <input type="hidden" name="[@i].Category" value="@Model[i].Category" />
-                    <input type="hidden" name="[@i].Text" value="@deepQuestion" />
+                    <input type="hidden" name="[@i].Text" value="@Model[i].Text" />
 
                     <div class="question-card">
-                        <div class="question-number">0@(i+1)</div>
-                        <span class="card-category">@Model[i].Category.ToUpper()</span>
-                        <p class="text-white fs-5 fw-bold mb-4">@deepQuestion</p>
-                        
+                        <div class="question-number">0@(i + 1)</div>
+                        <span class="card-category">KRITERIA: @Model[i].Category</span>
+                        <p class="fs-5 fw-bold">@Model[i].Text</p>
+
                         <div class="likert-container">
-                            <div class="likert-label">Sangat Tidak Penting</div>
+                            <div class="likert-label">Tidak Penting</div>
                             <div class="likert-options">
                                 @for (int s = 1; s <= 5; s++)
                                 {
                                     var radioId = $"q_{i}_{s}";
-                                    <input type="radio" name="[@i].SelectedScore" id="@radioId" value="@s" class="btn-check q-input" required>
+                                    <input type="radio" name="[@i].SelectedScore" id="@radioId" value="@s" class="btn-check q-input" required />
                                     <label class="likert-btn" for="@radioId">@s</label>
                                 }
                             </div>
@@ -137,39 +295,27 @@
             }
         </div>
 
-        <h4 class="section-divider text-white fw-bold">PHASE 02: ADAPTATION RESILIENCE</h4>
+        <h4 class="section-divider text-white fw-bold">Tahap 02: Resiliensi & Adaptasi Budaya</h4>
         <div class="row g-4">
             @for (int i = 4; i < Model.Count; i++)
             {
-                <div class="col-md-6 d-flex"> @{ 
-                        var deepQuestion = i switch {
-                            4 => "Bayangkan jam 9 malam, fisik Anda lelah setelah bekerja. Masihkah Anda memiliki disiplin untuk belajar Kanji secara mandiri?",
-                            5 => "Budaya kerja Jepang sangat ketat. Sanggupkah Anda mematikan total smartphone selama 8 jam penuh demi profesionalisme?",
-                            6 => "Saat rindu rumah menyerang hebat di bulan ketiga, apakah komitmen kontrak tetap menjadi harga mati yang tidak bisa ditawar?",
-                            7 => "Siapkah fisik Anda dipaksa bekerja dalam posisi statis atau membungkuk di bawah tekanan suhu ekstrem Jepang?",
-                            8 => "Jika seseorang menawarkan penghasilan 2x lipat namun ilegal, apakah integritas Anda cukup kuat untuk tetap di jalur hukum?",
-                            9 => "Mampukah Anda berdamai dengan rasa bosan terhadap makanan Jepang setiap hari tanpa merusak mood kerja Anda?",
-                            10 => "Detail adalah segalanya di Jepang. Sanggupkah Anda teliti memisahkan berbagai jenis sampah setiap hari tanpa mengeluh?",
-                            11 => "Saat terjadi kesalahan, siapkah Anda menurunkan ego untuk segera melapor (Hou-Ren-So) daripada menyembunyikannya?",
-                            _ => Model[i].Text
-                        };
-                    }
+                <div class="col-md-6 d-flex">
                     <input type="hidden" name="[@i].Index" value="@Model[i].Index" />
                     <input type="hidden" name="[@i].Category" value="@Model[i].Category" />
-                    <input type="hidden" name="[@i].Text" value="@deepQuestion" />
+                    <input type="hidden" name="[@i].Text" value="@Model[i].Text" />
 
                     <div class="question-card">
-                        <div class="question-number">@(i+1)</div>
-                        <span class="card-category text-pink" style="color:var(--accent-pink)">@Model[i].Category.ToUpper()</span>
-                        <p class="text-white fs-5 fw-bold mb-4">@deepQuestion</p>
-                        
+                        <div class="question-number">@(i + 1)</div>
+                        <span class="card-category">ASPEK: @Model[i].Category</span>
+                        <p class="fs-5 fw-bold">@Model[i].Text</p>
+
                         <div class="likert-container">
-                            <div class="likert-label">Sangat Tidak Siap</div>
+                            <div class="likert-label">Tidak Siap</div>
                             <div class="likert-options">
                                 @for (int s = 1; s <= 5; s++)
                                 {
                                     var radioId = $"q_{i}_{s}";
-                                    <input type="radio" name="[@i].SelectedScore" id="@radioId" value="@s" class="btn-check q-input" required>
+                                    <input type="radio" name="[@i].SelectedScore" id="@radioId" value="@s" class="btn-check q-input" required />
                                     <label class="likert-btn" for="@radioId">@s</label>
                                 }
                             </div>
@@ -181,9 +327,13 @@
         </div>
 
         <div class="text-center mt-5 mb-5">
-            <button type="submit" class="btn btn-generate btn-lg shadow-lg">
-                FINALIZE DATA & RUN ANALYSIS <i class="bi bi-cpu-fill ms-2"></i>
+            <button type="submit" class="btn-generate">
+                Jalankan Algoritma SAW <i class="bi bi-cpu-fill ms-2"></i>
             </button>
+            <p class="text-white-50 small mt-3">
+                <i class="bi bi-info-circle me-1"></i>
+                Data akan diproses menggunakan data riil e-Stat Japan.
+            </p>
         </div>
     </form>
 </div>
@@ -193,19 +343,14 @@
         const total = @Model.Count;
         const answered = document.querySelectorAll('input[type="radio"]:checked').length;
         const percent = (answered / total) * 100;
-        const fill = document.getElementById('progressFill');
-        fill.style.width = percent + "%";
-        
-        if(percent === 100) {
-            fill.style.boxShadow = "0 0 30px #FF1493";
-        }
+        document.getElementById('progressFill').style.width = percent + "%";
     }
 
     document.querySelectorAll('.q-input').forEach(input => {
-        input.addEventListener('change', function() {
+        input.addEventListener('change', function () {
             const card = this.closest('.question-card');
-            card.style.borderColor = "rgba(34, 211, 238, 0.5)";
-            card.style.background = "rgba(30, 41, 59, 0.7)";
+            card.style.borderColor = "var(--accent-pink)";
+            card.style.background = "rgba(255,20,147,0.05)";
             updateProgress();
         });
     });

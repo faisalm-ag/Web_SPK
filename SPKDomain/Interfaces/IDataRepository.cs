@@ -12,17 +12,27 @@ namespace SPKDomain.Interfaces
     {
         /// <summary>
         /// Mengambil data gabungan (RawDataRow) untuk seluruh wilayah.
-        /// Digunakan sebagai basis perhitungan normalisasi SAW.
         /// </summary>
         Task<List<RawDataRow>> GetRawDataAsync();
 
         /// <summary>
         /// Mengambil data gabungan yang sudah difilter berdasarkan kode pekerjaan tertentu.
-        /// Penting agar analisis gaji relevan dengan minat mahasiswa.
         /// </summary>
         Task<List<RawDataRow>> GetRawDataByJobAsync(string jobCode);
 
-        // --- Method Pengambilan Data Satuan (Dataset 1 - 4) ---
+        // --- Method Baru untuk Sinkronisasi Dropdown Biodata ---
+
+        /// <summary>
+        /// Mengambil daftar wilayah (Prefektur) unik dari dataset (FINAL_Perusahaan.csv / FINAL_CPI.csv).
+        /// </summary>
+        Task<List<string>> GetAvailableAreasAsync();
+
+        /// <summary>
+        /// Mengambil daftar kategori pekerjaan unik dari dataset (FINAL_Gaji.csv).
+        /// </summary>
+        Task<List<string>> GetAvailableJobsAsync();
+
+        // --- Method Pengambilan Data Satuan ---
         
         Task<List<Salary>> GetSalariesAsync();
         

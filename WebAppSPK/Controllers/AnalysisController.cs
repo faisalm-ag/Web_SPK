@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using SPKCore.Services;
 using WebAppSPK.ViewModels;
 using SPKDomain.Models;
@@ -7,7 +8,8 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using System.Linq;
 using System;
-using System.Globalization;
+using System.Text.Json;
+using System.Diagnostics;
 
 namespace WebAppSPK.Controllers
 {
@@ -23,41 +25,26 @@ namespace WebAppSPK.Controllers
         [HttpGet]
         public async Task<IActionResult> Step(string id)
         {
-            // 1. Proteksi Sesi: Pastikan user sudah isi biodata
-            if (TempData["UserNama"] == null) return RedirectToAction("Biodata", "Assessment");
+            var timer = Stopwatch.StartNew();
+
+            var userNama = HttpContext.Session.GetString("UserNama");
+            var jobCategory = HttpContext.Session.GetString("SelectedJob");
+            var userLokasiRaw = HttpContext.Session.GetString("SelectedArea");
+
+            if (string.IsNullOrEmpty(userNama)) 
+                return RedirectToAction("Biodata", "Assessment");
             
             if (string.IsNullOrEmpty(id)) id = "Gaji";
             if (id == "Final") return RedirectToAction("GenerateFinalReport");
 
-            var jobCode = TempData["UserBidang"]?.ToString() ?? "1072";
-            var userLokasiRaw = TempData["UserLokasi"]?.ToString() ?? "";
-            
-            double? previousValue = null;
+            var detailData = await _analysisService.GetStepAnalysisAsync(id, jobCategory ?? "", userLokasiRaw ?? "");
 
-            // Logika Sinkronisasi Data (Contoh: Bawa nilai Gaji ke halaman CPI)
-            if (id == "CPI" && TempData["LastSalaryValue"] != null)
-            {
-                if (double.TryParse(TempData["LastSalaryValue"]?.ToString(), NumberStyles.Any, CultureInfo.InvariantCulture, out double salaryVal))
-                {
-                    previousValue = salaryVal;
-                }
-            }
+            if (detailData == null) 
+                return NotFound("Data analisis tidak ditemukan.");
 
-            // Eksekusi Service untuk ambil data visualisasi (Chart/History)
-            var detailData = await _analysisService.GetStepAnalysisAsync(id, jobCode, previousValue);
+            timer.Stop();
+            string actualLatency = $"{timer.Elapsed.TotalMilliseconds:F4}ms";
 
-            if (detailData == null) return NotFound("Data analisis tidak ditemukan.");
-
-            // Simpan hasil Gaji sebagai referensi langkah berikutnya
-            if (id == "Gaji") 
-            {
-                TempData["LastSalaryValue"] = detailData.CurrentValue.ToString(CultureInfo.InvariantCulture);
-            }
-
-            // Penting agar data TempData tidak terhapus setelah dibaca sekali
-            TempData.Keep(); 
-
-            // 2. Mapping data ke ViewModel untuk dikirim ke View
             var viewModel = new AnalysisStepVM
             {
                 Title = id switch
@@ -68,28 +55,29 @@ namespace WebAppSPK.Controllers
                     "Lingkungan" => "Analisis Demografi & Lingkungan",
                     _ => "Data Analysis"
                 },
-                Description = $"Visualisasi data e-Stat kriteria {id} untuk mendukung keputusan magang Anda.",
+                Description = $"Visualisasi kriteria {id} berdasarkan data rill untuk membantu keputusan Anda.",
                 StepNumber = 3,
                 CurrentSubStep = id switch { "Gaji" => 1, "CPI" => 2, "Peluang" => 3, "Lingkungan" => 4, _ => 1 },
                 CriteriaCode = id switch { "Gaji" => "C1", "CPI" => "C2", "Peluang" => "C3", "Lingkungan" => "C4", _ => "C1" },
                 Icon = id switch { "Gaji" => "bi-cash-stack", "CPI" => "bi-cart-check", "Peluang" => "bi-building-gear", "Lingkungan" => "bi-people-fill", _ => "bi-graph-up" },
                 
-                UserLocationChoice = _analysisService.Translate(userLokasiRaw),
+                UserLocationChoice = userLokasiRaw ?? "Not Selected", 
+                UserChoiceValue = detailData.CurrentValue,
+                CurrentValue = detailData.CurrentValue,
                 
                 ChartLabels = detailData.ChartLabels ?? new List<string>(),
                 ChartValues = detailData.ChartValues ?? new List<double>(),
                 HistoryLabels = detailData.HistoryLabels ?? new List<string>(),
                 HistoryValues = detailData.HistoryValues ?? new List<double>(),
                 
-                Narration = detailData.Narration ?? string.Empty,
-                DeepInsight = detailData.DeepInsight ?? string.Empty,
-                WhyItMatters = detailData.WhyItMatters ?? string.Empty,
-                PreviousStepSummary = detailData.PreviousStepSummary ?? string.Empty,
-                ComparisonAnalysis = detailData.ComparisonAnalysis ?? string.Empty,
+                Narration = detailData.Narration,
+                DeepInsight = detailData.DeepInsight,
+                WhyItMatters = detailData.WhyItMatters,
                 
                 CriteriaTypeInfo = id == "CPI" ? "Cost" : "Benefit",
                 TotalDataProcessed = detailData.ChartLabels?.Count ?? 0,
-                DataProcessingTime = (new Random().NextDouble() * (0.0025 - 0.0010) + 0.0010).ToString("F4") + "s",
+                DataProcessingTime = actualLatency, 
+                
                 NextStepAction = id switch { "Gaji" => "CPI", "CPI" => "Peluang", "Peluang" => "Lingkungan", _ => "Final" }
             };
 
@@ -104,58 +92,70 @@ namespace WebAppSPK.Controllers
         [HttpGet]
         public async Task<IActionResult> GenerateFinalReport()
         {
-            // Validasi Sesi
-            if (TempData["UserNama"] == null) return RedirectToAction("Biodata", "Assessment");
+            var nama = HttpContext.Session.GetString("UserNama");
+            var bidang = HttpContext.Session.GetString("SelectedJob");
+            var lokasiRaw = HttpContext.Session.GetString("SelectedArea");
+            var answersJson = HttpContext.Session.GetString("UserAnswers");
 
-            var nama = TempData["UserNama"]?.ToString() ?? "User";
-            var bidang = TempData["UserBidang"]?.ToString() ?? "1072";
-            var lokasiRaw = TempData["UserLokasi"]?.ToString() ?? "";
-            
-            // Konversi nama lokasi ke format English/Romaji agar cocok dengan dataset
-            var lokasiTerjemahan = _analysisService.Translate(lokasiRaw);
+            if (string.IsNullOrEmpty(nama)) 
+                return RedirectToAction("Biodata", "Assessment");
 
-            var rawAnswers = TempData["Answers"] as int[];
-            var answers = rawAnswers?.ToList() ?? new List<int> { 5, 5, 5, 5, 5 };
+            List<int> answers = !string.IsNullOrEmpty(answersJson) 
+                ? JsonSerializer.Deserialize<List<int>>(answersJson) ?? new List<int>()
+                : Enumerable.Repeat(3, 12).ToList();
 
-            // 1. Kalkulasi Bobot Berdasarkan Jawaban Kuesioner (Metode Normalisasi)
-            double sum = answers.Take(4).Sum(x => (double)x);
-            if (sum <= 0) sum = 1;
+            var weightSource = answers.Take(4).Select(x => (double)x).ToList();
+            double totalWeightPoints = weightSource.Sum();
+            if (totalWeightPoints <= 0) totalWeightPoints = 4;
 
             var weights = new List<Weight>
             {
-                new Weight("Salary", (double)answers[0] / sum),
-                new Weight("CPI", (double)answers[1] / sum),
-                new Weight("Company", (double)answers[2] / sum),
-                new Weight("Population", (double)answers[3] / sum)
+                new Weight("Salary", weightSource[0] / totalWeightPoints),
+                new Weight("CPI", weightSource[1] / totalWeightPoints),
+                new Weight("Company", weightSource[2] / totalWeightPoints),
+                new Weight("Population", weightSource[3] / totalWeightPoints)
             };
 
-            // 2. Panggil Service dengan parameter Lokasi Pilihan User
-            var report = await _analysisService.GenerateFinalReportAsync(nama, bidang, answers, weights, lokasiTerjemahan);
+            var report = await _analysisService.GenerateFinalReportAsync(nama, bidang ?? "", answers, weights, lokasiRaw ?? "");
             
             if (report == null) return RedirectToAction("Index", "Home");
 
-            // 3. Mapping hasil report ke ViewModel FinalResultVM
+            // mapping ke ViewModel (FinalResultVM)
             var viewModel = new FinalResultVM
             {
                 Nama = nama,
-                BidangPekerjaan = report.TargetJob ?? "Umum",
-                LokasiPilihan = lokasiTerjemahan,
-                Prediction = report.Prediction ?? new PredictionResult(),
-                Rankings = report.LocationRankings ?? new List<SAWResult>(),
-                EligibilityScore = Math.Round(report.EligibilityScore, 1),
-                RecommendationCategory = report.RecommendationCategory ?? "N/A",
-                SummaryMessage = report.Conclusion ?? string.Empty,
-                Strengths = report.Strengths ?? new List<string>(),
-                Weaknesses = report.Weaknesses ?? new List<string>(),
-                Opportunities = report.Opportunities ?? new List<string>(),
-                Threats = report.Threats ?? new List<string>(),
-                FinancialAdvice = report.FinancialAdvice ?? string.Empty,
-                FamilyPermissionAdvice = report.FamilyPermissionAdvice ?? string.Empty,
-                CareerInsight = report.FutureCareerPath ?? string.Empty,
-                WeightSalary = weights[0].Value,
-                WeightCPI = weights[1].Value,
-                WeightCompany = weights[2].Value,
-                WeightPopulation = weights[3].Value
+                BidangPekerjaan = report.TargetJob,
+                LokasiPilihan = lokasiRaw ?? "Unknown",
+                
+                ScoreDisiplinEtika = report.ScoreDisiplinEtika,
+                ScoreKetahananDiri = report.ScoreKetahananDiri,
+                ScoreAdaptasiSosial = report.ScoreAdaptasiSosial,
+                Prediction = report.Prediction,
+
+                Rankings = report.LocationRankings,
+                
+                // --- PERBAIKAN: Mapping data lokasi pilihan dari report ke ViewModel ---
+                UserChosenLocationResult = report.ChosenLocationData,
+
+                EligibilityScore = report.EligibilityScore,
+                RecommendationCategory = report.RecommendationCategory,
+                
+                SummaryMessage = report.Conclusion,
+                ScoreExplanation = report.ScoreExplanation, 
+                SectionIntroPersonal = report.SectionIntroPersonal,
+                
+                PersonalStrengths = report.PersonalStrengths,
+                PersonalWeaknesses = report.PersonalWeaknesses,
+                FinancialAdvice = report.FinancialAdvice,
+                FamilyPermissionAdvice = report.FamilyAdvice,
+                CareerInsight = report.CareerInsight,
+
+                DecisionDisclaimer = report.DecisionDisclaimer,
+                
+                WeightSalary = Math.Round((weightSource[0] / totalWeightPoints) * 100, 1),
+                WeightCPI = Math.Round((weightSource[1] / totalWeightPoints) * 100, 1),
+                WeightCompany = Math.Round((weightSource[2] / totalWeightPoints) * 100, 1),
+                WeightPopulation = Math.Round((weightSource[3] / totalWeightPoints) * 100, 1)
             };
 
             return View("FinalReport", viewModel);

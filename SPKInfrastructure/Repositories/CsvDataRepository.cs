@@ -21,14 +21,12 @@ namespace SPKInfrastructure.Repositories
         public CsvDataRepository()
         {
             var rootDir = Directory.GetCurrentDirectory();
-            var pathCombine = Path.Combine(rootDir, "wwwroot", "data", "datasets");
-
-            if (!Directory.Exists(pathCombine))
-            {
-                pathCombine = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "data", "datasets");
-            }
+            _basePath = Path.Combine(rootDir, "wwwroot", "data", "datasets");
             
-            _basePath = pathCombine;
+            if (!Directory.Exists(_basePath))
+            {
+                _basePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "wwwroot", "data", "datasets");
+            }
         }
 
         public void ClearCache()
@@ -39,14 +37,34 @@ namespace SPKInfrastructure.Repositories
             _populationCache = null;
         }
 
-        public async Task<List<RawDataRow>> GetRawDataAsync()
+        public async Task<List<string>> GetAvailableAreasAsync()
         {
-            var salaries = await GetSalariesAsync();
-            var defaultJob = salaries.FirstOrDefault()?.JobCode ?? "1072"; // Default ke IT jika kosong
-            return await GetRawDataByJobAsync(defaultJob);
+            var populations = await GetPopulationsAsync();
+            return populations
+                .Where(p => p.StandardizedAreaEn != "National")
+                .Select(p => p.StandardizedAreaEn)
+                .Distinct()
+                .OrderBy(a => a)
+                .ToList();
         }
 
-        public async Task<List<RawDataRow>> GetRawDataByJobAsync(string jobCode)
+        public async Task<List<string>> GetAvailableJobsAsync()
+        {
+            var salaries = await GetSalariesAsync();
+            return salaries
+                .Where(s => !string.IsNullOrEmpty(s.JobNameEn))
+                .Select(s => s.JobNameEn)
+                .Distinct()
+                .OrderBy(j => j)
+                .ToList();
+        }
+
+        public async Task<List<RawDataRow>> GetRawDataAsync()
+        {
+            return await GetRawDataByJobAsync("Technical Specialist");
+        }
+
+        public async Task<List<RawDataRow>> GetRawDataByJobAsync(string jobName)
         {
             var rawDataList = new List<RawDataRow>();
 
@@ -55,39 +73,36 @@ namespace SPKInfrastructure.Repositories
             var salaries = await GetSalariesAsync();
             var companies = await GetCompaniesAsync();
 
-            // Ambil gaji terbaru untuk job yang dipilih
-            var targetSalary = salaries
-                .Where(s => s.JobCode == jobCode || s.JobName == jobCode)
-                .OrderByDescending(s => s.Year)
+            // 1. Ambil data gaji nasional untuk job terpilih (Gaji adalah kriteria Benefit)
+            var nationalSalary = salaries
+                .Where(s => s.JobNameEn == jobName && s.IsSalaryData == 1)
+                .OrderByDescending(s => s.TimeCode)
                 .FirstOrDefault();
 
-            var salaryValue = targetSalary?.SalaryValue ?? 0;
-            var jobName = targetSalary?.JobName ?? "Selected Industry";
+            var filteredCPI = cpis.Where(c => c.IsGeneralIndex == 1).ToList();
+            var filteredPop = populations.Where(p => p.IsTotalPop == 1).OrderByDescending(p => p.Year).ToList();
+            var filteredComp = companies.Where(c => c.IsTotalIndustry == 1 && c.AreaLevel == "Prefecture").ToList();
 
-            // Kita gunakan Populasi sebagai base (Master Area)
-            // Filter hanya level Prefektur (AreaCode berakhiran 000) agar ranking adil
-            var prefecturePopulations = populations.Where(p => p.AreaCode.EndsWith("000") || p.AreaCode.Length <= 2);
+            var latestPopByArea = filteredPop
+                .GroupBy(p => p.StandardizedAreaEn)
+                .Select(g => g.First())
+                .Where(p => p.StandardizedAreaEn != "National");
 
-            foreach (var pop in prefecturePopulations)
+            foreach (var pop in latestPopByArea)
             {
-                // Ambil 2 digit awal untuk sinkronisasi dengan CPI (e.g., 13000 -> 13)
-                var prefPrefix = pop.AreaCode.Substring(0, 2);
+                var cpiRow = filteredCPI.FirstOrDefault(c => c.StandardizedAreaEn == pop.StandardizedAreaEn);
+                var companyRow = filteredComp.FirstOrDefault(c => c.StandardizedAreaEn == pop.StandardizedAreaEn);
 
-                // Cari CPI yang paling relevan (prefix match)
-                var cpiRow = cpis.FirstOrDefault(c => c.AreaCode.StartsWith(prefPrefix));
-                
-                // Cari data perusahaan di prefektur yang sama
-                var companyRow = companies.FirstOrDefault(cp => cp.AreaCode == pop.AreaCode);
-                
                 rawDataList.Add(new RawDataRow
                 {
                     AreaCode = pop.AreaCode,
-                    AreaName = pop.AreaName,
-                    JobCode = jobCode,
+                    AreaName = pop.StandardizedAreaEn,
+                    JobCode = jobName,
                     BidangPekerjaan = jobName,
                     Population = pop.PopulationK,
-                    ConsumerPriceIndex = cpiRow?.CPIIndex ?? 100.0, 
-                    AverageSalary = salaryValue, // Gaji spesifik job
+                    ConsumerPriceIndex = cpiRow?.CPIIndex ?? 100.0,
+                    // Di sinilah Logika Nasional bekerja: Gaji yang sama digunakan untuk semua prefektur
+                    AverageSalary = nationalSalary?.SalaryValue ?? 0, 
                     CompanyCount = companyRow?.EstimatedCount ?? 0
                 });
             }
@@ -99,12 +114,15 @@ namespace SPKInfrastructure.Repositories
         {
             if (_cpiCache != null) return _cpiCache;
             var data = await ReadCsvAsync(Path.Combine(_basePath, "FINAL_CPI.csv"));
+            
             _cpiCache = data.Select(cols => new CPI 
             { 
-                AreaCode = cols.Length > 0 ? cols[0] : "", 
-                AreaName = cols.Length > 1 ? cols[1] : "", 
-                Period = cols.Length > 2 ? cols[2] : "", 
-                CPIIndex = cols.Length > 3 ? ParseDouble(cols[3]) : 100.0
+                AreaCode = cols[4], 
+                AreaName = cols[5], 
+                StandardizedAreaEn = cols[11],
+                TimeCode = long.TryParse(cols[6], out long t) ? t : 0,
+                IsGeneralIndex = int.TryParse(cols[12], out int g) ? g : 0,
+                CPIIndex = ParseDouble(cols[13])
             }).ToList();
             return _cpiCache;
         }
@@ -113,12 +131,16 @@ namespace SPKInfrastructure.Repositories
         {
             if (_salaryCache != null) return _salaryCache;
             var data = await ReadCsvAsync(Path.Combine(_basePath, "FINAL_Gaji.csv"));
+            
             _salaryCache = data.Select(cols => new Salary 
             { 
-                JobCode = cols.Length > 0 ? cols[0] : "", 
-                JobName = cols.Length > 1 ? cols[1] : "", 
-                Year = cols.Length > 2 && long.TryParse(cols[2], out long y) ? y : 0, 
-                SalaryValue = cols.Length > 3 ? ParseDouble(cols[3]) : 0 
+                // Index disesuaikan dengan FINAL_Gaji.csv Anda
+                JobCode = cols[6], 
+                JobCategoryEn = cols[13],
+                JobNameEn = cols[14],
+                TimeCode = long.TryParse(cols[8], out long t) ? t : 0,
+                IsSalaryData = int.TryParse(cols[15], out int s) ? s : 0,
+                SalaryValue = ParseDouble(cols[17])
             }).ToList();
             return _salaryCache;
         }
@@ -127,13 +149,17 @@ namespace SPKInfrastructure.Repositories
         {
             if (_companyCache != null) return _companyCache;
             var data = await ReadCsvAsync(Path.Combine(_basePath, "FINAL_Perusahaan.csv"));
+            
             _companyCache = data.Select(cols => new Company 
             { 
-                IndustryCode = cols.Length > 0 ? cols[0] : "", 
-                IndustryName = cols.Length > 1 ? cols[1] : "", 
-                AreaCode = cols.Length > 2 ? cols[2] : "", 
-                AreaName = cols.Length > 3 ? cols[3] : "", 
-                EstimatedCount = cols.Length > 4 ? ParseDouble(cols[4]) : 0 
+                IndustryCode = cols[2], 
+                IndustryNameEn = cols[15],
+                AreaCode = cols[6],
+                AreaNameRaw = cols[7],
+                StandardizedAreaEn = cols[13],
+                AreaLevel = cols[14],
+                IsTotalIndustry = int.TryParse(cols[16], out int i) ? i : 0,
+                EstimatedCount = ParseDouble(cols[18])
             }).ToList();
             return _companyCache;
         }
@@ -142,12 +168,15 @@ namespace SPKInfrastructure.Repositories
         {
             if (_populationCache != null) return _populationCache;
             var data = await ReadCsvAsync(Path.Combine(_basePath, "FINAL_Populasi.csv"));
+            
             _populationCache = data.Select(cols => new Population 
             { 
-                AreaCode = cols.Length > 0 ? cols[0] : "", 
-                AreaName = cols.Length > 1 ? cols[1] : "", 
-                Year = cols.Length > 2 && int.TryParse(cols[2], out int y) ? y : 0, 
-                PopulationK = cols.Length > 3 ? ParseDouble(cols[3]) : 0
+                AreaCode = cols[4], 
+                AreaNameRaw = cols[5],
+                StandardizedAreaEn = cols[11],
+                Year = (int)ParseDouble(cols[12]),
+                IsTotalPop = int.TryParse(cols[13], out int tp) ? tp : 0,
+                PopulationK = ParseDouble(cols[14])
             }).ToList();
             return _populationCache;
         }
@@ -165,10 +194,9 @@ namespace SPKInfrastructure.Repositories
                 var line = await reader.ReadLineAsync();
                 if (string.IsNullOrWhiteSpace(line)) continue;
 
-                // Regex sakti untuk menangani koma di dalam tanda kutip (penting untuk nama industri/area)
                 var columns = Regex.Split(line, ",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)")
-                                   .Select(s => s.Trim().Trim('"'))
-                                   .ToArray();
+                                    .Select(s => s.Trim().Trim('"'))
+                                    .ToArray();
                 
                 results.Add(columns);
             }
@@ -178,7 +206,6 @@ namespace SPKInfrastructure.Repositories
         private double ParseDouble(string value)
         {
             if (string.IsNullOrEmpty(value)) return 0;
-            // Menangani angka dengan format ribuan atau desimal titik
             return double.TryParse(value, NumberStyles.Any, CultureInfo.InvariantCulture, out double result) ? result : 0;
         }
     }

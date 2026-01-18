@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Japan Career SPK</title>
+    <title>@ViewData["Title"] - STARTJAP Assessment</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet" />
@@ -16,7 +16,6 @@
             --dark-blue: #020617;
             --glass-bg: rgba(255, 255, 255, 0.03);
             --glass-border: rgba(255, 255, 255, 0.1);
-            --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
         }
 
         body {
@@ -28,84 +27,61 @@
                 radial-gradient(circle at 90% 80%, rgba(255, 20, 147, 0.07) 0%, transparent 25%);
             background-attachment: fixed;
             overflow-x: hidden;
+            padding-top: 85px; 
         }
 
-        /* --- Global Button Style (Profesional & Konsisten) --- */
-        .btn-spk {
-            background-color: var(--accent-pink);
-            color: white;
-            border: none;
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-
-        .btn-spk:hover {
-            background-color: var(--accent-pink-hover);
-            color: white;
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 20, 147, 0.4);
-        }
-
-        .btn-spk-outline {
-            background: transparent;
-            color: white;
-            border: 2px solid var(--glass-border);
-            padding: 12px 28px;
-            border-radius: 12px;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-
-        .btn-spk-outline:hover {
-            border-color: var(--accent-pink);
-            background: rgba(255, 20, 147, 0.05);
-            color: var(--accent-pink);
-        }
-
-        /* --- Glassmorphism Card Style --- */
-        .spk-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(10px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 2rem;
-            box-shadow: var(--card-shadow);
-            transition: transform 0.3s ease;
-        }
-
-        /* --- Form Styling --- */
-        .form-control, .form-select {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--glass-border);
-            color: white;
-            border-radius: 10px;
-            padding: 12px;
-        }
-
-        .form-control:focus, .form-select:focus {
-            background: rgba(255, 255, 255, 0.08);
-            border-color: var(--accent-pink);
-            color: white;
-            box-shadow: none;
-        }
-
+        /* --- Navbar Fixed --- */
         .blur-nav {
             backdrop-filter: blur(15px);
             background: rgba(2, 6, 23, 0.85);
             z-index: 1030;
+            transition: all 0.3s ease;
+        }
+
+        .navbar-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            letter-spacing: 1px;
+        }
+
+        .brand-logo {
+            width: 35px;
+            height: 35px;
+            object-fit: contain;
+            filter: drop-shadow(0 0 5px rgba(255, 20, 147, 0.4));
         }
 
         .text-pink { color: var(--accent-pink) !important; }
+
+        /* --- Global Button Style --- */
+        .btn-spk {
+            background-color: var(--accent-pink);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .btn-spk:hover {
+            background-color: var(--accent-pink-hover);
+            transform: translateY(-2px);
+        }
+
+        /* --- Footer Hover Style --- */
+        .footer-link {
+            text-decoration: none;
+            color: rgba(255, 255, 255, 0.5) !important;
+            transition: all 0.3s ease;
+        }
+        .footer-link:hover {
+            color: var(--accent-pink) !important;
+            padding-left: 5px;
+        }
         
-        /* Scrollbar Customization */
+        /* Scrollbar */
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--dark-blue); }
         ::-webkit-scrollbar-thumb { 
@@ -118,10 +94,11 @@
 </head>
 <body class="d-flex flex-column h-100">
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark sticky-top blur-nav py-3 border-bottom border-white border-opacity-10">
+        <nav class="navbar navbar-expand-lg navbar-dark fixed-top blur-nav py-3 border-bottom border-white border-opacity-10">
             <div class="container">
                 <a class="navbar-brand fw-800 fs-4" asp-controller="Home" asp-action="Index">
-                    <span class="text-pink"><i class="bi bi-rocket-takeoff-fill me-2"></i>JAPAN</span>CAREER
+                    <img src="~/images/logo-startjap.png" alt="STARTJAP Logo" class="brand-logo" />
+                    <span class="text-white">START<span class="text-pink">JAP</span></span>
                 </a>
                 
                 <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -129,14 +106,19 @@
                 </button>
 
                 <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav ms-auto fw-semibold gap-2">
+                    <ul class="navbar-nav ms-auto fw-semibold gap-2 text-uppercase small tracking-wider">
                         <li class="nav-item">
                             <a class="nav-link px-3 @(ViewContext.RouteData.Values["Action"]?.ToString() == "Index" && ViewContext.RouteData.Values["Controller"]?.ToString() == "Home" ? "text-pink" : "")" 
                                asp-controller="Home" asp-action="Index">Beranda</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link px-3 @(ViewContext.RouteData.Values["Controller"]?.ToString() == "Assessment" ? "text-pink" : "")" 
-                               asp-controller="Assessment" asp-action="Biodata">Asesmen</a>
+                               asp-controller="Assessment" asp-action="Biodata">Asesmen Karir</a>
+                        </li>
+                        @* Tautan Kebijakan Privasi di Header *@
+                        <li class="nav-item">
+                            <a class="nav-link px-3 @(ViewContext.RouteData.Values["Action"]?.ToString() == "Privacy" ? "text-pink" : "")" 
+                               asp-controller="Home" asp-action="Privacy">Kebijakan Privasi</a>
                         </li>
                     </ul>
                 </div>
@@ -150,23 +132,42 @@
         </div>
     </main>
 
-    <footer class="footer mt-auto py-5 border-top border-white border-opacity-10" style="background: rgba(0,0,0,0.3)">
-        <div class="container text-center">
-            <div class="row">
-                <div class="col-lg-6 text-lg-start mb-4 mb-lg-0">
-                    <h5 class="fw-bold text-white mb-2">SPK Karir Jepang</h5>
-                    <p class="text-white-50 small mb-0">Sistem cerdas berbasis Big Data & Machine Learning untuk membantu mahasiswa menentukan lokasi magang terbaik di Jepang.</p>
+    <footer class="footer mt-auto py-5 border-top border-white border-opacity-10" style="background: rgba(0,0,0,0.4)">
+        <div class="container text-center text-lg-start">
+            <div class="row align-items-center">
+                <div class="col-lg-5 mb-4 mb-lg-0">
+                    <div class="d-flex align-items-center mb-3 justify-content-center justify-content-lg-start">
+                        <img src="~/images/logo-startjap.png" alt="Logo" style="width:25px; margin-right:8px;">
+                        <h5 class="fw-bold text-white mb-0">STARTJAP <span class="text-pink">Consultancy</span></h5>
+                    </div>
+                    <p class="text-white-50 small mb-0 pe-lg-5">
+                        Solusi cerdas bimbingan karir Jepang dengan integrasi data pemerintah e-Stat dan algoritma pengambilan keputusan SAW.
+                    </p>
                 </div>
-                <div class="col-lg-6 text-lg-end">
-                    <p class="small text-white-50 mb-2">Sumber Data Resmi: e-Stat (Portal Pemerintah Jepang)</p>
-                    <div class="d-flex justify-content-lg-end justify-content-center gap-3">
-                        <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2">ML Engine v1.0</span>
-                        <span class="badge rounded-pill bg-dark border border-secondary px-3 py-2">SAW Algorithm</span>
+                <div class="col-lg-3 mb-4 mb-lg-0">
+                    <h6 class="text-white fw-bold mb-3">Navigasi</h6>
+                    <ul class="list-unstyled small">
+                        <li class="mb-2"><a asp-controller="Home" asp-action="Index" class="footer-link">Beranda</a></li>
+                        <li class="mb-2"><a asp-controller="Assessment" asp-action="Biodata" class="footer-link">Mulai Asesmen</a></li>
+                        <li class="mb-2"><a asp-controller="Home" asp-action="Privacy" class="footer-link">Kebijakan Privasi</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <p class="small text-white-50 mb-3">Teknologi Assessment</p>
+                    <div class="d-flex justify-content-lg-end justify-content-center gap-2">
+                        <span class="badge rounded-pill bg-dark border border-white border-opacity-10 px-3 py-2 small">DSS Engine</span>
+                        <span class="badge rounded-pill px-3 py-2 small" style="background: linear-gradient(45deg, #FF1493, #6366f1)">SAW Method</span>
                     </div>
                 </div>
             </div>
             <hr class="my-4 border-secondary opacity-25">
-            <p class="small text-white-50 mb-0">© @DateTime.Now.Year - WebApp SPK Mahasiswa Magang</p>
+            <div class="d-flex flex-column flex-lg-row justify-content-between align-items-center gap-3">
+                <p class="small text-white-50 mb-0">© @DateTime.Now.Year <span class="fw-bold">STARTJAP</span>. All rights reserved.</p>
+                <div class="small text-white-50">
+                    <span class="me-3"><i class="bi bi-shield-check me-1"></i>Data Terproteksi</span>
+                    <span><i class="bi bi-globe-americas me-1"></i>Integrasi e-Stat Japan</span>
+                </div>
+            </div>
         </div>
     </footer>
 

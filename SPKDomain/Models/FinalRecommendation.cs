@@ -1,58 +1,53 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
 namespace SPKDomain.Models
 {
-    /// <summary>
-    /// Model Laporan Akhir yang menggabungkan hasil Machine Learning dan Kalkulasi SAW.
-    /// Diperkaya dengan narasi strategis untuk konsultasi mahasiswa STT Cipasung.
-    /// </summary>
     public class FinalRecommendation
     {
+        // --- 1. Identitas ---
         public string StudentName { get; set; } = string.Empty;
         public string TargetJob { get; set; } = string.Empty;
+        public string ChosenLocation { get; set; } = string.Empty;
 
-        // Hasil Prediksi Kesiapan Mental (Input Kuesioner via ML)
+        // --- 2. Analisis Kesiapan Internal ---
+        public double ScoreDisiplinEtika { get; set; }  
+        public double ScoreKetahananDiri { get; set; }  
+        public double ScoreAdaptasiSosial { get; set; } 
         public PredictionResult Prediction { get; set; } = new();
 
-        // Hasil Perankingan Lokasi (Input 4 Dataset via SAW)
+        // --- 3. Analisis Eksternal (Dataset) ---
         public List<SAWResult> LocationRankings { get; set; } = new();
+        
+        // --- PERBAIKAN: Menampung detail data lokasi yang dipilih user ---
+        public SAWResult? ChosenLocationData { get; set; }
 
-        // --- Analisis Kelayakan Strategis ---
-        
-        // Skor gabungan akhir (Mental + Ekonomi Dataset) dalam skala 0-100
-        public double EligibilityScore { get; set; }
-        
-        // Kategori: "Sangat Direkomendasikan", "Dipertimbangkan Kembali", dll.
+        // --- 4. Kesimpulan Strategis & Narasi Utama ---
+        public double EligibilityScore { get; set; } 
         public string RecommendationCategory { get; set; } = string.Empty;
-        
-        // Kesimpulan narasi utama (Vonis Akhir)
+        public string ScoreExplanation { get; set; } = string.Empty;
         public string Conclusion { get; set; } = string.Empty;
 
-        // --- Analisis SWOT & Konsultasi ---
-        public List<string> Strengths { get; set; } = new();    // Alasan kuat berangkat
-        public List<string> Weaknesses { get; set; } = new();   // Tantangan internal (mental/skill)
-        public List<string> Opportunities { get; set; } = new(); // Keuntungan karir di prefektur tsb
-        public List<string> Threats { get; set; } = new();      // Risiko eksternal (biaya/sosial)
+        // --- 5. Narasi Konsultatif ---
+        public string SectionIntroPersonal { get; set; } = string.Empty;
+        public List<string> PersonalStrengths { get; set; } = new(); 
+        public List<string> PersonalWeaknesses { get; set; } = new();
+        public string FinancialAdvice { get; set; } = string.Empty;
+        public string FamilyAdvice { get; set; } = string.Empty;
+        public string CareerInsight { get; set; } = string.Empty;
 
-        // --- Poin Pertimbangan Humanis ---
-        public string FinancialAdvice { get; set; } = string.Empty;     // Saran biaya & tabungan
-        public string FamilyPermissionAdvice { get; set; } = string.Empty; // Narasi untuk diskusi orang tua
-        public string FutureCareerPath { get; set; } = string.Empty;    // Proyeksi setelah magang
+        // --- 6. Pesan Kebijaksanaan ---
+        public string DecisionDisclaimer { get; set; } = string.Empty;
 
-        /// <summary>
-        /// Mendapatkan lokasi rekomendasi peringkat pertama.
-        /// </summary>
+        // --- 7. Helpers ---
         public SAWResult? TopRecommendation => LocationRankings.OrderByDescending(x => x.TotalScore).FirstOrDefault();
 
-        /// <summary>
-        /// Mendapatkan status warna untuk indikator visual di UI (gauge/badge).
-        /// </summary>
         public string SeverityColor => EligibilityScore switch
         {
-            >= 80 => "success", // Green
-            >= 65 => "warning", // Yellow
-            _ => "danger"       // Red
+            >= 80 => "success",
+            >= 65 => "warning",
+            _ => "danger"
         };
     }
 }

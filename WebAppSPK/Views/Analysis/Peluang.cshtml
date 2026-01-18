@@ -2,53 +2,99 @@
 @model AnalysisStepVM
 
 @{
-    ViewData["Title"] = "Analisis Peluang Industri";
-    // Warna tema khusus untuk Peluang (Cyan)
-    var themeColor = "#22d3ee"; 
+    ViewData["Title"] = "Analisis Peluang Industri - " + Model.Title;
 }
 
 <style>
+    :root {
+        --accent-pink: #f472b6;
+        --accent-cyan: #22d3ee;
+        --bg-dark: #020617;
+    }
+
     /* Stepper UI */
     .stepper-wrapper { display: flex; justify-content: space-between; margin-bottom: 3rem; }
     .stepper-item { position: relative; display: flex; flex-direction: column; align-items: center; flex: 1; }
     .stepper-item::before { position: absolute; content: ""; border-bottom: 2px solid rgba(255,255,255,0.1); width: 100%; top: 20px; left: -50%; z-index: 2; }
     .stepper-item:first-child::before { content: none; }
     .step-counter { position: relative; z-index: 5; display: flex; justify-content: center; align-items: center; width: 40px; height: 40px; border-radius: 50%; background: #1a1a1a; border: 2px solid rgba(255,255,255,0.1); color: white; font-weight: bold; margin-bottom: 10px; }
-    .stepper-item.completed .step-counter { background: @themeColor; border-color: @themeColor; color: #0f172a; }
-    .stepper-item.active .step-counter { background: #ec4899; border-color: #ec4899; box-shadow: 0 0 15px rgba(236, 72, 153, 0.4); }
+    .stepper-item.completed .step-counter { background: var(--accent-cyan); border-color: var(--accent-cyan); color: #0f172a; }
+    .stepper-item.active .step-counter { background: var(--accent-pink); border-color: var(--accent-pink); box-shadow: 0 0 15px rgba(244, 114, 182, 0.4); }
     .step-name { color: rgba(255,255,255,0.5); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; }
 
     /* Matrix Loader */
-    .loading-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #020617; z-index: 9999; display: flex; flex-direction: column; justify-content: center; align-items: center; transition: opacity 0.5s ease; }
-    .matrix-text { font-family: 'Courier New', monospace; color: @themeColor; font-size: 1.2rem; text-shadow: 0 0 10px @themeColor; }
-    .scan-line { width: 300px; height: 2px; background: @themeColor; box-shadow: 0 0 15px @themeColor; position: relative; overflow: hidden; margin: 20px 0; }
+    .loading-overlay { 
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+        background: var(--bg-dark); z-index: 9999; display: flex; 
+        flex-direction: column; justify-content: center; align-items: center; 
+        transition: opacity 0.5s ease; 
+    }
+    .matrix-text { font-family: 'Courier New', monospace; color: var(--accent-pink); font-size: 1.2rem; text-shadow: 0 0 10px var(--accent-pink); }
+    .scan-line { width: 300px; height: 2px; background: var(--accent-pink); box-shadow: 0 0 15px var(--accent-pink); position: relative; overflow: hidden; margin: 20px 0; }
     .scan-line::after { content: ""; position: absolute; width: 100%; height: 100%; background: white; left: -100%; animation: scan 1.5s infinite; }
     @@keyframes scan { 0% { left: -100%; } 100% { left: 100%; } }
 
-    .spk-card { background: rgba(30,41,59,0.5) !important; border: 1px solid rgba(255,255,255,0.05); border-radius: 24px; backdrop-filter: blur(10px); }
-    .btn-cyber-next { background: @themeColor; border: none; border-radius: 12px; color: #0f172a; transition: all 0.3s ease; }
-    .btn-cyber-next:hover { background: #fff; transform: translateY(-2px); box-shadow: 0 5px 15px @themeColor; }
+    /* Cards */
+    .spk-card { 
+        background: linear-gradient(145deg, rgba(30, 41, 59, 0.7), rgba(15, 23, 42, 0.8)) !important; 
+        border: 1px solid rgba(244, 114, 182, 0.1); 
+        border-radius: 24px; 
+        backdrop-filter: blur(10px); 
+    }
+    
+    .btn-cyber-next { 
+        background: var(--accent-pink); 
+        border: none; 
+        border-radius: 12px; 
+        color: white; 
+        padding: 1rem;
+        font-weight: 800;
+        transition: all 0.3s ease; 
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        display: inline-block;
+        text-align: center;
+    }
+    .btn-cyber-next:hover { 
+        background: #fff; 
+        color: var(--accent-pink);
+        transform: translateY(-3px); 
+        box-shadow: 0 10px 20px rgba(244, 114, 182, 0.3); 
+    }
     
     .chart-container {
-        padding: 10px;
+        padding: 15px;
         background: rgba(15, 23, 42, 0.3);
         border-radius: 16px;
         border: 1px solid rgba(255,255,255,0.02);
+        height: 550px; /* Ukuran grafik lebih besar */
+        position: relative;
+    }
+
+    .insight-badge {
+        background: rgba(244, 114, 182, 0.1);
+        color: var(--accent-pink);
+        padding: 4px 12px;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: bold;
+        border: 1px solid rgba(244, 114, 182, 0.2);
     }
 </style>
 
 <div id="loader" class="loading-overlay">
-    <div class="matrix-text mb-2 text-uppercase">SCANNING INDUSTRIAL DENSITY...</div>
+    <div class="matrix-text mb-2 text-uppercase">ANALYZING INDUSTRIAL VOLUME...</div>
     <div class="scan-line"></div>
-    <div class="text-white-50 small">Mapping opportunities for: @TempData["UserNama"]</div>
+    <div class="text-white-50 small">Mapping Career Safety Net for @TempData.Peek("UserNama")</div>
 </div>
 
 <div class="container py-5">
     <div class="row justify-content-center mb-5">
-        <div class="col-md-8 col-lg-6">
+        <div class="col-md-10 col-lg-8">
             <div class="stepper-wrapper">
-                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Biodata</div></div>
-                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Gaji & CPI</div></div>
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Profil</div></div>
+                <div class="stepper-item completed"><div class="step-counter"><i class="bi bi-check"></i></div><div class="step-name">Gaji & Biaya</div></div>
                 <div class="stepper-item active"><div class="step-counter">3</div><div class="step-name">Peluang</div></div>
                 <div class="stepper-item"><div class="step-counter">4</div><div class="step-name">Hasil</div></div>
             </div>
@@ -57,13 +103,13 @@
 
     <div class="text-center mb-5">
         <div class="d-inline-flex align-items-center gap-2 px-3 py-1 rounded-pill bg-white bg-opacity-10 border border-white border-opacity-10 mb-3">
-            <span class="fw-bold" style="color: @themeColor">ANALISIS 03</span>
+            <span class="insight-badge">FAKTOR C3</span>
             <span class="text-white-50">|</span>
-            <span class="text-white small">KRITERIA BENEFIT</span>
+            <span class="text-white small fw-bold">MARKET ABSORPTION</span>
         </div>
-        <h2 class="fw-800 text-white">Peluang <span style="color: @themeColor">Penyerapan Industri</span></h2>
-        <p class="text-white-50 mx-auto" style="max-width: 650px;">
-            @Model.Narration
+        <h2 class="display-5 fw-800 text-white">Densitas <span style="color: var(--accent-pink)">Unit Usaha</span></h2>
+        <p class="text-white-50 mx-auto fs-5" style="max-width: 700px;">
+            Volume ekosistem industri di <strong class="text-white">@Model.UserLocationChoice</strong> dibandingkan dengan wilayah lainnya.
         </p>
     </div>
 
@@ -72,38 +118,49 @@
             <div class="spk-card p-4 shadow-lg h-100">
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h5 class="text-white fw-bold m-0"><i class="bi bi-bar-chart-steps me-2 text-info"></i>Industrial Density Comparison</h5>
-                        <p class="text-white-50 small mb-0">Wilayah dengan jumlah unit usaha terbanyak (Skala Nasional)</p>
+                        <h5 class="text-white fw-bold m-0"><i class="bi bi-graph-up me-2" style="color:var(--accent-pink)"></i>Volume Distribusi Industri</h5>
+                        <p class="text-white-50 small mb-0">Visualisasi kepadatan unit usaha (Bawah ke Atas)</p>
                     </div>
-                    <span class="badge" style="background: @themeColor; color: #0f172a">Data e-Stat 2026</span>
+                    <span class="badge bg-dark border border-secondary" style="color:var(--accent-pink)">Area Analysis</span>
                 </div>
-                <div class="chart-container" style="height: 480px; position: relative;">
+                
+                <div class="chart-container">
                     <canvas id="opportunityChart"></canvas>
                 </div>
             </div>
         </div>
 
         <div class="col-lg-4">
-            <div class="spk-card p-4 border-start border-4 h-100" style="border-color: @themeColor !important;">
-                <h5 class="text-white fw-bold mb-4">Deep Insight</h5>
+            <div class="spk-card p-4 border-start border-4 h-100" style="border-color: var(--accent-pink) !important;">
+                <h5 class="text-white fw-bold mb-4"><i class="bi bi-cpu me-2"></i>Smart Insight</h5>
                 
                 <div class="mb-4">
-                    <p class="small text-white-50 text-justify" style="line-height: 1.6;">
-                        @Model.DeepInsight
+                    <p class="text-white-50 lh-lg italic" style="font-size: 0.95rem;">
+                        "@Model.DeepInsight"
                     </p>
                 </div>
 
-                <div class="p-3 rounded-4 mb-4" style="background: rgba(34, 211, 238, 0.05); border: 1px solid rgba(34, 211, 238, 0.2);">
-                    <h6 class="fw-bold small mb-2" style="color: @themeColor"><i class="bi bi-shield-lock-fill me-2"></i>Career Safety Net</h6>
-                    <p class="text-white-50 mb-0" style="font-size: 0.75rem; line-height: 1.5;">
-                        Prefektur dengan densitas industri tinggi (seperti Tokyo/Osaka) memberikan Anda <strong>opsi relokasi lebih luas</strong> jika kontrak kerja utama berakhir.
+                <div class="p-3 rounded-4 mb-4" style="background: rgba(244, 114, 182, 0.05); border: 1px solid rgba(244, 114, 182, 0.2);">
+                    <h6 class="fw-bold small mb-2 text-white"><i class="bi bi-shield-check me-2" style="color:var(--accent-pink)"></i>Career Resilience</h6>
+                    <p class="text-white-50 mb-0" style="font-size: 0.8rem; line-height: 1.5;">
+                        Tingginya volume unit usaha mencerminkan jaring pengaman karir yang lebih kuat dan pilihan transisi pekerjaan yang lebih banyak.
                     </p>
                 </div>
 
                 <div class="mt-auto pt-4">
-                    <div class="text-white-50 small mb-3">Sistem telah memproses data dalam: <span class="text-white fw-bold">@Model.DataProcessingTime</span></div>
-                    <a asp-controller="Analysis" asp-action="@Model.NextStepAction" class="btn btn-cyber-next w-100 py-3 fw-bold shadow-sm">
-                        Lanjut ke Tahap Terakhir <i class="bi bi-arrow-right ms-2"></i>
+                    <div class="p-3 rounded-3 mb-4 bg-dark bg-opacity-50 border border-secondary border-opacity-25">
+                        <div class="d-flex justify-content-between small mb-2">
+                            <span class="text-white-50">Kalkulasi:</span>
+                            <span class="text-white fw-bold">Benefit (MAX)</span>
+                        </div>
+                        <div class="d-flex justify-content-between small">
+                            <span class="text-white-50">Processing:</span>
+                            <span style="color:var(--accent-cyan)">@Model.DataProcessingTime</span>
+                        </div>
+                    </div>
+
+                    <a asp-controller="Analysis" asp-action="Step" asp-route-id="Lingkungan" class="btn btn-cyber-next w-100 shadow-sm">
+                        Lanjut ke Lingkungan <i class="bi bi-arrow-right ms-2"></i>
                     </a>
                 </div>
             </div>
@@ -114,7 +171,7 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
-        // Loader Fade-out
+        // Loader handling
         window.addEventListener('load', function() {
             setTimeout(() => {
                 const loader = document.getElementById('loader');
@@ -126,86 +183,64 @@
         });
 
         const ctx = document.getElementById('opportunityChart').getContext('2d');
-        
-        // Data from Model
         const labels = @Html.Raw(Json.Serialize(Model.ChartLabels));
         const dataValues = @Html.Raw(Json.Serialize(Model.ChartValues));
-        const userLocation = "@Model.UserLocationChoice";
+        const userLoc = "@Model.UserLocationChoice".toLowerCase();
 
-        // Create Gradients
-        const blueGradient = ctx.createLinearGradient(0, 0, 400, 0);
-        blueGradient.addColorStop(0, 'rgba(34, 211, 238, 0.8)');
-        blueGradient.addColorStop(1, 'rgba(34, 211, 238, 0.2)');
-
-        const highlightGradient = ctx.createLinearGradient(0, 0, 400, 0);
-        highlightGradient.addColorStop(0, '#f472b6'); // Pink untuk pilihan user agar kontras
-        highlightGradient.addColorStop(1, 'rgba(244, 114, 182, 0.3)');
-
-        // Background Colors Logic
-        const bgColors = labels.map(label => {
-            return label.toLowerCase() === userLocation.toLowerCase() 
-                ? highlightGradient 
-                : blueGradient;
-        });
-
-        const borderColors = labels.map(label => {
-            return label.toLowerCase() === userLocation.toLowerCase() 
-                ? '#f472b6' 
-                : '#22d3ee';
-        });
+        // Menciptakan gradien untuk area chart
+        const pinkFillGradient = ctx.createLinearGradient(0, 0, 0, 400);
+        pinkFillGradient.addColorStop(0, 'rgba(244, 114, 182, 0.4)');
+        pinkFillGradient.addColorStop(1, 'rgba(244, 114, 182, 0.0)');
 
         new Chart(ctx, {
-            type: 'bar', // Ubah ke Bar Chart
+            type: 'line', // Area Chart menggunakan tipe 'line'
             data: {
                 labels: labels,
                 datasets: [{
-                    label: 'Jumlah Unit Usaha',
+                    label: 'Unit Usaha',
                     data: dataValues,
-                    backgroundColor: bgColors,
-                    borderColor: borderColors,
-                    borderWidth: 1,
-                    borderRadius: 8, // Membuat batang agak bulat di ujung
-                    barThickness: 25,
+                    fill: true, // Mengaktifkan arsiran di bawah garis
+                    backgroundColor: pinkFillGradient,
+                    borderColor: '#f472b6',
+                    borderWidth: 3,
+                    tension: 0.4, // Membuat garis menjadi halus/melengkung
+                    pointBackgroundColor: labels.map(l => l.toLowerCase().includes(userLoc) ? '#fff' : '#f472b6'),
+                    pointBorderColor: '#f472b6',
+                    pointRadius: labels.map(l => l.toLowerCase().includes(userLoc) ? 8 : 4),
+                    pointHoverRadius: 10,
+                    pointBorderWidth: 2
                 }]
             },
             options: {
-                indexAxis: 'y', // Membuat Bar menjadi Horizontal
                 responsive: true,
                 maintainAspectRatio: false,
                 plugins: {
                     legend: { display: false },
                     tooltip: {
                         backgroundColor: '#0f172a',
-                        titleColor: '#22d3ee',
-                        bodyColor: '#fff',
-                        padding: 12,
-                        cornerRadius: 10,
+                        titleColor: '#f472b6',
                         callbacks: {
-                            label: function(context) {
-                                return ` ${context.raw.toLocaleString()} Perusahaan`;
-                            }
+                            label: (context) => ` ${context.parsed.y.toLocaleString()} Unit Usaha`
                         }
                     }
                 },
                 scales: {
                     x: {
-                        grid: { color: 'rgba(255,255,255,0.05)', drawBorder: false },
-                        ticks: { color: '#64748b', font: { size: 10 } }
-                    },
-                    y: {
                         grid: { display: false },
                         ticks: { 
-                            color: function(context) {
-                                const label = labels[context.index];
-                                return label.toLowerCase() === userLocation.toLowerCase() ? '#fff' : '#94a3b8';
-                            },
+                            color: (c) => labels[c.index] && labels[c.index].toLowerCase().includes(userLoc) ? '#f472b6' : '#64748b',
                             font: { 
-                                size: 12, 
-                                weight: function(context) {
-                                    const label = labels[context.index];
-                                    return label.toLowerCase() === userLocation.toLowerCase() ? 'bold' : 'normal';
-                                }
+                                size: 11,
+                                weight: (c) => labels[c.index] && labels[c.index].toLowerCase().includes(userLoc) ? 'bold' : 'normal'
                             }
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { 
+                            color: '#94a3b8',
+                            callback: (value) => value.toLocaleString()
                         }
                     }
                 }

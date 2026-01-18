@@ -6,7 +6,6 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace SPKCore.Services
 {
@@ -20,8 +19,6 @@ namespace SPKCore.Services
         public string Narration { get; set; } = "";
         public string DeepInsight { get; set; } = "";
         public string WhyItMatters { get; set; } = "";
-        public string PreviousStepSummary { get; set; } = "";
-        public string ComparisonAnalysis { get; set; } = "";
         public double CurrentValue { get; set; }
     }
 
@@ -31,69 +28,6 @@ namespace SPKCore.Services
         private readonly ISAWCalculator _calculator;
         private readonly PredictionService _predictionService;
 
-        private readonly Dictionary<string, string> _romajiMap = new()
-        {
-            // --- Prefektur ---
-            {"北海道", "Hokkaido"}, {"青森", "Aomori"}, {"岩手", "Iwate"}, {"宮城", "Miyagi"},
-            {"秋田", "Akita"}, {"山形", "Yamagata"}, {"福島", "Fukushima"}, {"茨城", "Ibaraki"},
-            {"栃木", "Tochigi"}, {"群馬", "Gunma"}, {"埼玉", "Saitama"}, {"千葉", "Chiba"},
-            {"東京", "Tokyo"}, {"神奈川", "Kanagawa"}, {"新潟", "Niigata"}, {"富山", "Toyama"},
-            {"石川", "Ishikawa"}, {"福井", "Fukui"}, {"山梨", "Yamanashi"}, {"長野", "Nagano"},
-            {"岐阜", "Gifu"}, {"静岡", "Shizuoka"}, {"愛知", "Aichi"}, {"三重", "Mie"},
-            {"滋賀", "Shiga"}, {"京都", "Kyoto"}, {"大阪", "Osaka"}, {"兵庫", "Hyogo"},
-            {"奈良", "Nara"}, {"和歌山", "Wakayama"}, {"鳥取", "Tottori"}, {"島根", "Shimane"},
-            {"岡山", "Okayama"}, {"広島", "Hiroshima"}, {"山口", "Yamaguchi"}, {"徳島", "Tokushima"},
-            {"香川", "Kagawa"}, {"愛媛", "Ehime"}, {"高知", "Kochi"}, {"福岡", "Fukuoka"},
-            {"佐賀", "Saga"}, {"長崎", "Nagasaki"}, {"熊本", "Kumamoto"}, {"大分", "Oita"},
-            {"宮崎", "Miyazaki"}, {"鹿児島", "Kagoshima"}, {"沖縄", "Okinawa"},
-
-            // --- IT & Engineering ---
-            {"システムコンサルタント・設計者", "IT Consultant/Architect"},
-            {"ソフトウェア作成者", "Software Developer"},
-            {"情報処理・通信技術者", "IT & Telecom Engineer"},
-            {"電気・電子・電気通信技術者", "Electronics Engineer"},
-            {"機械技術者", "Mechanical Engineer"},
-            {"化学技術者", "Chemical Engineer"},
-            {"土木技術者", "Civil Engineer"},
-            {"輸送用機器技術者", "Automotive Engineer"},
-            {"金属技術者", "Metallurgical Engineer"},
-            {"測量技術者", "Surveying Engineer"},
-            {"デザイナー", "Designer"},
-
-            // --- Health & Care ---
-            {"介護職員", "Caregiver (Kaigo)"},
-            {"介護支援専門員", "Care Manager"},
-            {"訪問介護従事者", "Home Care Worker"},
-            {"医師", "Medical Doctor"},
-            {"歯科医師", "Dentist"},
-            {"薬剤師", "Pharmacist"},
-            {"看護師", "Registered Nurse"},
-            {"准看護師", "Associate Nurse"},
-            {"保育士", "Nursery Teacher"},
-            {"栄養士", "Nutritionist"},
-
-            // --- Construction & Industry ---
-            {"建築", "Construction"},
-            {"土木従事者", "Civil Engineering"},
-            {"大工", "Carpenter"},
-            {"電気工事従事者", "Electrician"},
-            {"配管従事者", "Plumber"},
-            {"鉄工", "Ironworker"},
-            {"金属プレス", "Metal Press"},
-            {"溶接", "Welder"},
-
-            // --- Service & Logistics ---
-            {"飲食物調理", "Chef/Cook"},
-            {"飲食物給仕", "Waiter/Waitress"},
-            {"理容・美容師", "Barber/Beautician"},
-            {"ビル・建物清掃", "Building Cleaner"},
-            {"警備員", "Security Guard"},
-            {"自動車運転", "Driver"},
-            {"大型貨物", "Heavy Truck Driver"},
-            {"教員", "Teacher/Educator"},
-            {"不詳", "Other/Undisclosed"}
-        };
-
         public AnalysisService(IDataRepository repository, ISAWCalculator calculator, PredictionService predictionService)
         {
             _repository = repository;
@@ -101,160 +35,175 @@ namespace SPKCore.Services
             _predictionService = predictionService;
         }
 
-        public string Translate(string key)
-        {
-            if (string.IsNullOrEmpty(key)) return "Other";
-            var cleaned = Regex.Replace(key, @"[\d-]", "").Trim();
-            foreach (var item in _romajiMap)
-            {
-                if (cleaned.Contains(item.Key)) return item.Value;
-            }
-            return cleaned.Replace("県", "").Replace("府", "").Replace("都", "").Replace("道", "")
-                          .Replace("従事者", "").Replace("職業", "").Replace("職", "").Trim();
-        }
-
-        public async Task<AnalysisStepData> GetStepAnalysisAsync(string stepName, string jobCode, double? previousValue = null)
+        public async Task<AnalysisStepData> GetStepAnalysisAsync(string stepName, string jobCategory, string selectedArea = "")
         {
             var stepData = new AnalysisStepData { StepName = stepName };
-            string transJob = Translate(jobCode);
 
             switch (stepName)
             {
                 case "Gaji":
                     var salaries = await _repository.GetSalariesAsync();
-                    var jobSalaries = salaries.Where(s => s.JobName == jobCode || s.JobCode == jobCode)
-                                             .OrderBy(s => s.Year).ToList();
+                    var jobSalaries = salaries
+                        .Where(s => s.JobNameEn == jobCategory && s.IsSalaryData == 1)
+                        .OrderBy(s => s.TimeCode).ToList();
 
                     if (jobSalaries.Any())
                     {
-                        stepData.HistoryLabels = jobSalaries.Select(h => h.Year.ToString()).ToList();
-                        stepData.HistoryValues = jobSalaries.Select(h => h.SalaryValue * 10000).ToList();
-                        stepData.CurrentValue = jobSalaries.Last().SalaryValue * 10000;
+                        stepData.HistoryLabels = jobSalaries.Select(h => h.TimeCode.ToString().Substring(0, 4)).Distinct().ToList();
+                        stepData.HistoryValues = jobSalaries.Select(h => h.SalaryValue).ToList();
+                        stepData.CurrentValue = jobSalaries.Last().SalaryValue;
                     }
-                    stepData.Narration = $"Analisis Modal Finansial Sektor {transJob}.";
-                    stepData.DeepInsight = $"Gaji rata-rata: ¥{stepData.CurrentValue:N0}.";
-                    stepData.WhyItMatters = "Menghitung potensi daya beli dan remitansi ke Indonesia.";
+                    
+                    stepData.Narration = $"Analisis Tolok Ukur Pendapatan Nasional";
+                    stepData.DeepInsight = $"Gaji baseline nasional untuk posisi ini adalah ¥{stepData.CurrentValue:N0}.";
+                    stepData.WhyItMatters = "Gaji ini menjadi standar pendapatan (Benefit) yang nantinya akan dibandingkan dengan biaya hidup di setiap prefektur.";
                     break;
 
                 case "CPI":
                     var cpis = await _repository.GetCPIAsync();
-                    if (cpis.Any())
-                    {
-                        var areaGroups = cpis.GroupBy(c => Translate(c.AreaName))
-                                            .Select(g => new { Area = g.Key, AvgIndex = g.Average(x => x.CPIIndex) })
-                                            .OrderByDescending(x => x.AvgIndex).Take(12).ToList();
+                    var allCpi = cpis.Where(c => c.IsGeneralIndex == 1)
+                                     .GroupBy(c => c.StandardizedAreaEn)
+                                     .Select(g => g.First())
+                                     .OrderByDescending(c => c.CPIIndex).ToList();
 
-                        stepData.ChartLabels = areaGroups.Select(a => a.Area).ToList();
-                        stepData.ChartValues = areaGroups.Select(a => a.AvgIndex).ToList();
-                        stepData.CurrentValue = cpis.Average(c => c.CPIIndex);
-                    }
+                    var userCpi = allCpi.FirstOrDefault(c => c.StandardizedAreaEn == selectedArea);
+                    var top9Cpi = GetTop9PlusUser(allCpi, selectedArea, c => c.StandardizedAreaEn);
+
+                    stepData.ChartLabels = top9Cpi.Select(c => c.StandardizedAreaEn).ToList();
+                    stepData.ChartValues = top9Cpi.Select(c => c.CPIIndex).ToList();
+                    stepData.CurrentValue = userCpi?.CPIIndex ?? 100.0;
+                    
+                    stepData.Narration = $"Analisis Indeks Biaya Hidup: {selectedArea}";
+                    stepData.DeepInsight = $"Indeks biaya hidup di {selectedArea} berada pada angka {stepData.CurrentValue}.";
+                    stepData.WhyItMatters = "CPI adalah kriteria 'Cost'. Semakin tinggi angkanya, semakin besar pengeluaran untuk kebutuhan pokok.";
                     break;
 
                 case "Peluang":
                     var comps = await _repository.GetCompaniesAsync();
-                    var prefComps = comps.Where(c => c.AreaCode.EndsWith("000")) 
-                                         .GroupBy(c => Translate(c.AreaName))
-                                         .Select(g => new { Area = g.Key, Total = (double)g.Max(x => x.EstimatedCount) })
-                                         .OrderByDescending(c => c.Total).Take(12).ToList();
+                    var allComps = comps.Where(c => c.IsTotalIndustry == 1 && c.AreaLevel == "Prefecture")
+                                         .OrderByDescending(c => c.EstimatedCount).ToList();
+                    
+                    var userComp = allComps.FirstOrDefault(c => c.StandardizedAreaEn == selectedArea);
+                    var top9Comps = GetTop9PlusUser(allComps, selectedArea, c => c.StandardizedAreaEn);
 
-                    stepData.ChartLabels = prefComps.Select(c => c.Area).ToList();
-                    stepData.ChartValues = prefComps.Select(c => c.Total).ToList();
+                    stepData.ChartLabels = top9Comps.Select(c => c.StandardizedAreaEn).ToList();
+                    stepData.ChartValues = top9Comps.Select(c => c.EstimatedCount).ToList();
+                    stepData.CurrentValue = userComp?.EstimatedCount ?? 0;
+
+                    stepData.Narration = $"Analisis Kepadatan Industri: {selectedArea}";
+                    stepData.DeepInsight = $"Terdapat sekitar {stepData.CurrentValue:N0} unit usaha di wilayah {selectedArea}.";
+                    stepData.WhyItMatters = "Banyaknya jumlah perusahaan meningkatkan peluang penempatan dan stabilitas karir magang Anda.";
                     break;
 
                 case "Lingkungan":
                     var pops = await _repository.GetPopulationsAsync();
-                    var topPops = pops.GroupBy(p => Translate(p.AreaName))
-                                      .Select(g => new { Area = g.Key, Value = g.Max(p => p.PopulationK) })
-                                      .OrderByDescending(p => p.Value).Take(12).ToList();
+                    var allPops = pops.Where(p => p.IsTotalPop == 1 && p.StandardizedAreaEn != "National")
+                                      .OrderByDescending(p => p.PopulationK).ToList();
+                    
+                    var userPop = allPops.FirstOrDefault(p => p.StandardizedAreaEn == selectedArea);
+                    var top9Pops = GetTop9PlusUser(allPops, selectedArea, p => p.StandardizedAreaEn);
 
-                    stepData.ChartLabels = topPops.Select(p => p.Area).ToList();
-                    stepData.ChartValues = topPops.Select(p => p.Value).ToList();
+                    stepData.ChartLabels = top9Pops.Select(p => p.StandardizedAreaEn).ToList();
+                    stepData.ChartValues = top9Pops.Select(p => p.PopulationK).ToList();
+                    stepData.CurrentValue = userPop?.PopulationK ?? 0;
+
+                    stepData.Narration = $"Analisis Lingkungan & Populasi: {selectedArea}";
+                    stepData.DeepInsight = $"Populasi di {selectedArea} tercatat {stepData.CurrentValue:N0} ribu jiwa.";
+                    stepData.WhyItMatters = "Skala populasi berbanding lurus dengan kelengkapan fasilitas publik dan kemudahan transportasi.";
                     break;
             }
             return stepData;
         }
 
-        public async Task<FinalRecommendation> GenerateFinalReportAsync(string studentName, string jobCode, List<int> answers, List<Weight> weights, string selectedArea = "")
+        private List<T> GetTop9PlusUser<T>(List<T> source, string selectedArea, Func<T, string> areaSelector)
+        {
+            var top10 = source.Take(10).ToList();
+            var isUserInTop10 = top10.Any(x => areaSelector(x) == selectedArea);
+
+            if (isUserInTop10 || string.IsNullOrEmpty(selectedArea)) return top10;
+
+            var result = source.Take(9).ToList();
+            var userItem = source.FirstOrDefault(x => areaSelector(x) == selectedArea);
+            if (userItem != null) result.Add(userItem);
+            
+            return result;
+        }
+
+        public async Task<FinalRecommendation> GenerateFinalReportAsync(string studentName, string jobCategory, List<int> answers, List<Weight> weights, string selectedArea = "")
         {
             var prediction = _predictionService.PredictSatisfaction(answers);
-            var rawData = await _repository.GetRawDataByJobAsync(jobCode);
+            var rawData = await _repository.GetRawDataByJobAsync(jobCategory);
+            var normalized = _calculator.PrepareAndNormalize(rawData, weights);
+            var ranked = _calculator.CalculateRanking(normalized);
 
-            if (rawData == null || !rawData.Any()) rawData = await _repository.GetRawDataByJobAsync("1072");
+            // Pencarian data spesifik wilayah pilihan
+            var userChoice = ranked.FirstOrDefault(r => r.AreaName.Equals(selectedArea, StringComparison.OrdinalIgnoreCase)) ?? ranked.First();
 
-            var normalized = _calculator.PrepareAndNormalize(rawData);
-            var rankedRaw = _calculator.CalculateRanking(normalized, weights);
+            // Pilar Mental
+            double pilar1 = (answers[4] + answers[8] + answers[10]) / 3.0; // Disiplin
+            double pilar2 = (answers[6] + answers[7] + answers[9]) / 3.0;  // Ketahanan
+            double pilar3 = (answers[5] + answers[11]) / 2.0;             // Adaptasi
 
-            var ranked = rankedRaw
-                .GroupBy(r => Translate(r.AreaName))
-                .Select(g => new SAWResult 
-                { 
-                    AreaName = g.Key, 
-                    TotalScore = g.Max(x => x.TotalScore),
-                    RawSalary = g.First().RawSalary,
-                    RawCPI = g.First().RawCPI
-                })
-                .OrderByDescending(r => r.TotalScore)
-                .ToList();
-
-            // LOGIC: Ambil data wilayah yang dipilih user di biodata
-            var userChoice = ranked.FirstOrDefault(r => r.AreaName.Equals(selectedArea, StringComparison.OrdinalIgnoreCase)) 
-                             ?? ranked.First();
-
-            var systemTop = ranked.First();
-            
             var report = new FinalRecommendation
             {
                 StudentName = studentName,
-                TargetJob = Translate(jobCode),
+                TargetJob = jobCategory,
+                ChosenLocation = selectedArea,
                 Prediction = prediction,
                 LocationRankings = ranked.Take(5).ToList(),
-                // Eligibility Score dihitung berdasarkan wilayah PILIHAN USER
-                EligibilityScore = Math.Round((prediction.Probability * 100 * 0.4) + (userChoice.TotalScore * 100 * 0.6), 1)
+                
+                // --- PERBAIKAN: Memasukkan data SAW lengkap ke dalam report ---
+                ChosenLocationData = userChoice, 
+                
+                EligibilityScore = Math.Round((prediction.Probability * 100 * 0.4) + (userChoice.TotalScore * 100 * 0.6), 1),
+                ScoreDisiplinEtika = Math.Round(pilar1, 1),
+                ScoreKetahananDiri = Math.Round(pilar2, 1),
+                ScoreAdaptasiSosial = Math.Round(pilar3, 1)
             };
 
-            report.RecommendationCategory = report.EligibilityScore >= 80 ? "Sangat Direkomendasikan" :
-                                            report.EligibilityScore >= 65 ? "Direkomendasikan dengan Catatan" : "Pertimbangkan Kembali";
-
-            // Conclusion yang lebih personal
-            report.Conclusion = $"Berdasarkan analisis untuk wilayah {userChoice.AreaName}, ";
-            if (userChoice.AreaName != systemTop.AreaName)
-            {
-                report.Conclusion += $"sistem menemukan bahwa {systemTop.AreaName} secara statistik lebih unggul untuk profesi {report.TargetJob}, namun {userChoice.AreaName} tetap dievaluasi sesuai pilihan Anda.";
-            }
-            else
-            {
-                report.Conclusion += $"{userChoice.AreaName} merupakan pilihan terbaik secara statistik untuk profesi {report.TargetJob}.";
-            }
+            // --- NARASI STRATEGIS ---
+            report.ScoreExplanation = $"Skor {report.EligibilityScore}% mencerminkan perpaduan antara profil psikologis Anda (40%) dan data riil ekonomi wilayah {selectedArea} (60%). Angka ini merupakan indikator awal keselarasan antara harapan pribadi dengan realitas lapangan.";
             
-            // SWOT disesuaikan dengan userChoice
-            report.Strengths = new List<string> { 
-                $"Skor kesesuaian wilayah {userChoice.AreaName}: {userChoice.TotalScore:F4}",
-                "Keseimbangan parameter ekonomi lokal terpantau stabil",
-                "Potensi dukungan sosial masyarakat di lokasi pilihan"
-            };
+            report.RecommendationCategory = report.EligibilityScore >= 80 ? "Sangat Direkomendasikan" : 
+                                           report.EligibilityScore >= 65 ? "Dipertimbangkan" : "Perlu Persiapan Matang";
 
-            report.Weaknesses = new List<string> {
-                userChoice.RawCPI > 102 ? $"Biaya hidup di {userChoice.AreaName} di atas rata-rata" : "Persaingan di industri padat cukup ketat",
-                "Perlu adaptasi bahasa Jepang teknis yang intensif"
-            };
+            string statusEkonomi = userChoice.TotalScore > 0.7 ? "sangat menguntungkan" : "cukup menantang";
+            report.Conclusion = $"Wilayah {selectedArea} menawarkan indeks kecocokan {userChoice.TotalScore:F2} untuk posisi {jobCategory}. Tantangan utama di sini adalah menjaga keseimbangan antara {statusEkonomi}nya biaya hidup lokal dengan proyeksi pendapatan bulanan Anda.";
 
-            report.Opportunities = new List<string> {
-                "Peluang karir jangka panjang di perusahaan mitra lokal",
-                $"Jaringan komunitas pekerja asing di wilayah {userChoice.AreaName}"
-            };
+            report.SectionIntroPersonal = "Evaluasi berikut mencakup kekuatan yang dapat Anda manfaatkan dan potensi hambatan yang perlu Anda antisipasi di Jepang.";
 
-            report.Threats = new List<string> {
-                "Inflasi lokal yang mempengaruhi daya simpan",
-                "Gegar budaya pada 3 bulan pertama"
-            };
+            // --- LOGIKA KELEBIHAN (STRENGTHS) ---
+            if (pilar1 >= 3.5) report.PersonalStrengths.Add("Integritas Kerja: Anda memiliki fondasi disiplin yang kuat untuk standar kerja Jepang.");
+            if (pilar2 >= 3.5) report.PersonalStrengths.Add("Resiliensi: Kemampuan Anda menghadapi tekanan akan menjadi aset besar saat fase adaptasi.");
+            if (pilar3 >= 3.5) report.PersonalStrengths.Add("Komunikasi Sosial: Kemudahan Anda beradaptasi membantu mempercepat proses asimilasi budaya.");
+            
+            if (!report.PersonalStrengths.Any())
+            {
+                double maxPilar = Math.Max(pilar1, Math.Max(pilar2, pilar3));
+                if (maxPilar == pilar1) report.PersonalStrengths.Add("Potensi Kedisiplinan: Anda menunjukkan niat baik untuk mengikuti aturan, modal awal yang penting.");
+                else if (maxPilar == pilar2) report.PersonalStrengths.Add("Potensi Daya Tahan: Ada kemauan dalam diri Anda untuk bertahan meski dalam kondisi sulit.");
+                else report.PersonalStrengths.Add("Potensi Interaksi: Sisi ramah Anda dapat membantu mencairkan suasana di lingkungan baru.");
+            }
 
-            // Financial Advice berdasarkan wilayah pilihan
-            report.FinancialAdvice = (userChoice.RawSalary * 10000 > 300000) 
-                ? $"Gaji di {userChoice.AreaName} tergolong tinggi. Anda berpotensi menabung lebih banyak."
-                : $"Gaji di {userChoice.AreaName} standar. Disarankan melakukan penghematan biaya hidup.";
+            // --- LOGIKA KEKURANGAN (WEAKNESSES) ---
+            if (pilar1 < 3.5) report.PersonalWeaknesses.Add("Fleksibilitas Aturan: Anda perlu membiasakan diri dengan ketegasan SOP di Jepang yang minim toleransi.");
+            if (pilar2 < 3.5) report.PersonalWeaknesses.Add("Manajemen Stres: Waspadai potensi kejenuhan; siapkan hobi atau kegiatan positif di waktu luang.");
+            if (pilar3 < 3.5) report.PersonalWeaknesses.Add("Keterbukaan Diri: Berusahalah untuk lebih proaktif dalam berkomunikasi guna menghindari rasa terisolasi.");
 
-            report.FamilyPermissionAdvice = "Wilayah ini memiliki indeks keamanan dan kenyamanan yang baik untuk ditinggali.";
-            report.FutureCareerPath = $"Sertifikasi JLPT akan sangat meningkatkan daya tawar Anda di {userChoice.AreaName}.";
+            if (report.PersonalWeaknesses.Count <= 1)
+            {
+                report.PersonalWeaknesses.Add("Cultural Fatigue: Meskipun mental kuat, tetap waspadai kelelahan budaya yang biasanya muncul setelah 6 bulan.");
+                report.PersonalWeaknesses.Add("Homesickness: Kerinduan pada keluarga adalah hal manusiawi yang tetap harus Anda kelola dengan baik.");
+            }
+
+            // --- NASIHAT & DISCLAIMER ---
+            report.FinancialAdvice = userChoice.RawSalary > 210000 
+                ? $"Gaji di {selectedArea} cukup kompetitif. Fokuslah pada investasi diri."
+                : $"Gaji standar di {selectedArea} mewajibkan Anda untuk sangat teliti dalam mengatur pengeluaran harian.";
+
+            report.FamilyAdvice = "Bicarakan rencana ini dengan keluarga, terutama mengenai target jangka panjang Anda setelah selesai magang.";
+
+            report.DecisionDisclaimer = "Hasil ini adalah simulasi sistem berdasarkan data saat ini. Keputusan akhir tetap sepenuhnya berada di tangan Anda. Gunakan laporan ini sebagai salah satu sudut pandang pertimbangan, namun tetaplah mendengarkan intuisi dan hasil diskusi bersama keluarga atau mentor Anda.";
 
             return report;
         }

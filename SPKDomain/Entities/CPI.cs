@@ -9,30 +9,36 @@ namespace SPKDomain.Entities
     /// </summary>
     public class CPI
     {
-        // Kode Wilayah (Contoh: 13A01)
+        // area_code (Contoh: 13A01)
         public required string AreaCode { get; set; }
 
-        // Nama Wilayah Asli (Contoh: "13100 東京都区部")
+        // area_name / 地域（2020年基準） (Contoh: "13100 東京都区部")
         public required string AreaName { get; set; }
 
-        // Nama Wilayah Bersih/Romaji (Contoh: "Tokyo-to")
-        // Akan diisi melalui AnalysisService untuk tampilan UI
-        public string? AreaNameDisplay { get; set; }
+        // standardized_area_en (Contoh: Tokyo)
+        // Kunci utama untuk join dengan dataset Gaji, Perusahaan, dan Populasi
+        public required string StandardizedAreaEn { get; set; }
 
-        // Periode data (Contoh: 2025001212)
-        public required string Period { get; set; }
+        // time_code (Contoh: 2025001212)
+        public long TimeCode { get; set; }
 
-        // Nilai Indeks Harga Konsumen (C2: Cost)
+        // is_general_index (1 jika "0001 総合", 0 jika kategori spesifik)
+        // Memastikan kita menghitung biaya hidup total dalam rumus SAW
+        public int IsGeneralIndex { get; set; }
+
+        // clean_value / CPI Index (C2: Cost)
         public double CPIIndex { get; set; }
 
         public CPI() { }
 
         [SetsRequiredMembers]
-        public CPI(string areaCode, string areaName, string period, double cpiIndex)
+        public CPI(string areaCode, string areaName, string standardizedAreaEn, long timeCode, int isGeneralIndex, double cpiIndex)
         {
             AreaCode = areaCode;
             AreaName = areaName;
-            Period = period;
+            StandardizedAreaEn = standardizedAreaEn;
+            TimeCode = timeCode;
+            IsGeneralIndex = isGeneralIndex;
             CPIIndex = cpiIndex;
         }
     }
